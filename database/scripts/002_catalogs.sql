@@ -1,0 +1,3 @@
+-- 002_catalogs.sql
+-- Catálogos base: resource_types, business_profiles, application_roles, resource_access_policies
+-- Incluye políticas de acceso (15 combinaciones: 3 tipos × 5 perfiles)

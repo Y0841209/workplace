@@ -1,0 +1,148 @@
+version: '3.8'
+
+# Development Override - Use with: docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+# This override enables hot reload, debug ports, and development settings
+
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+      - ./database/dev-seed.sql:/docker-entrypoint-initdb.d/99-dev-seed.sql:ro
+
+  api:
+    build:
+      target: build  # Use build stage with SDK for hot reload
+    container_name: booking-api-dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=booking;Username=booking_user;Password=dev_password;Include Error Detail=true"
+      ConnectionStrings__Hangfire: "Host=postgres;Database=booking;Username=booking_user;Password=dev_password"
+      
+      # Dev Entra ID (use Azure AD B2C tenant or mock)
+      AzureAd__Instance: https://login.microsoftonline.com/
+      AzureAd__Domain: ${AZURE_AD_DOMAIN:-devtenant.onmicrosoft.com}
+      AzureAd__TenantId: ${AZURE_AD_TENANT_ID:-00000000-0000-0000-0000-000000000000}
+      AzureAd__ClientId: ${AZURE_AD_CLIENT_ID:-00000000-0000-0000-0000-000000000000}
+      AzureAd__ClientSecret: ${AZURE_AD_CLIENT_SECRET:-dev_secret}
+      
+      # Dev Email (catch-all)
+      Email__SmtpHost: smtp4dev
+      Email__SmtpPort: 25
+      Email__SmtpUser: ""
+      Email__SmtpPassword: ""
+      Email__FromAddress: noreply@booking.local
+      Email__FromName: Workplace Booking (Dev)
+      Email__UseSsl: "false"
+      
+      Frontend__BaseUrl: http://localhost:3000
+      
+      # Debug
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    volumes:
+      - ../../src/backend/src:/src:ro
+      - ../../src/backend/tests:/tests:ro
+      - ~/.nuget/packages:/root/.nuget/packages:ro
+    ports:
+      - "8080:8080"   # HTTP API
+      - "9229:9229"   # Debugger (if using VS Code debugger)
+    command: ["dotnet", "watch", "run", "--project", "WorkplaceBooking.Api", "--urls", "http://+:8080"]
+    develop:
+      watch:
+        - action: sync
+          path: ../src/backend/src
+          target: /src
+
+  worker:
+    build:
+      target: build
+    container_name: booking-worker-dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=booking;Username=booking_user;Password=dev_password"
+      ConnectionStrings__Hangfire: "Host=postgres;Database=booking;Username=booking_user;Password=dev_password"
+      AzureAd__Instance: https://login.microsoftonline.com/
+      AzureAd__Domain: ${AZURE_AD_DOMAIN:-devtenant.onmicrosoft.com}
+      AzureAd__TenantId: ${AZURE_AD_TENANT_ID:-00000000-0000-0000-0000-000000000000}
+      AzureAd__ClientId: ${AZURE_AD_CLIENT_ID:-00000000-0000-0000-0000-000000000000}
+      AzureAd__ClientSecret: ${AZURE_AD_CLIENT_SECRET:-dev_secret}
+      Email__SmtpHost: smtp4dev
+      Email__SmtpPort: 25
+      Email__UseSsl: "false"
+    volumes:
+      - ../../src/backend/src:/src:ro
+      - ~/.nuget/packages:/root/.nuget/packages:ro
+    command: ["dotnet", "watch", "run", "--project", "WorkplaceBooking.Api", "--worker"]
+
+  frontend:
+    build:
+      target: build  # Vite dev server
+    container_name: booking-frontend-dev
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api/v1
+      VITE_APP_TITLE: Workplace Booking (Dev)
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ../../src/frontend:/app:ro
+      - /app/node_modules
+    ports:
+      - "3000:3000"   # Vite dev server
+      - "24678:24678" # HMR WebSocket
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+    develop:
+      watch:
+        - action: sync
+          path: ../src/frontend/src
+          target: /app/src
+        - action: rebuild
+          path: ../src/frontend/package.json
+
+  nginx:
+    container_name: booking-nginx-dev
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - frontend
+      - api
+
+  # Development SMTP Server (Web UI at http://localhost:2500)
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    container_name: booking-smtp4dev
+    ports:
+      - "25:25"      # SMTP
+      - "143:143"    # IMAP
+      - "2500:80"    # Web UI
+    volumes:
+      - smtp4dev_data:/smtp4dev
+    restart: unless-stopped
+
+  # pgAdmin for Database Management (http://localhost:5050)
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: booking-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@booking.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  smtp4dev_data:
+  pgadmin_data:

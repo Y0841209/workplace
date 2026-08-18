@@ -1,0 +1,47 @@
+# Build outputs
+bin/
+obj/
+
+# User secrets
+*.user
+*.suo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docker
+.docker/
+
+# Test results
+TestResults/
+coverage/
+
+# Database
+*.sqlite
+*.db
+
+# Certificates
+*.pfx
+*.p12
+*.crt
+*.key
+
+# NuGet
+packages/
+*.nupkg

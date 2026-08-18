@@ -1,0 +1,4 @@
+-- 001_extensions_schema.sql
+-- Extensiones PostgreSQL requeridas y creación del esquema booking
+-- Extensiones: pgcrypto, btree_gist, citext
+-- Esquema: booking

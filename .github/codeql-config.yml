@@ -1,0 +1,33 @@
+name: "CodeQL Config"
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/bin/**"
+  - "**/obj/**"
+  - "**/TestResults/**"
+  - "**/coverage/**"
+  - "**/*.generated.cs"
+  - "**/*.designer.cs"
+  - "**/Migrations/**"
+  - "**/migrations/**"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/.git/**"
+
+paths:
+  - "src/backend/src"
+  - "src/frontend/src"
+
+# Custom queries for specific security concerns
+queries:
+  - uses: ./codeql-queries/csharp/insecure-random.ql
+  - uses: ./codeql-queries/csharp/hardcoded-credentials.ql
+  - uses: ./codeql-queries/csharp/sql-injection.ql
+  - uses: ./codeql-queries/csharp/xss.ql
+  - uses: ./codeql-queries/javascript/xss.ql
+  - uses: ./codeql-queries/javascript/path-traversal.ql

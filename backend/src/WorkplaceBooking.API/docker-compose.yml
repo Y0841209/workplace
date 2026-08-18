@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: booking-api-postgres
+    environment:
+      POSTGRES_DB: booking
+      POSTGRES_USER: booking_user
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking_user -d booking"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: booking-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=booking;Username=booking_user;Password=dev_password"
+      AzureAd__Instance: https://login.microsoftonline.com/
+      AzureAd__Domain: devtenant.onmicrosoft.com
+      AzureAd__TenantId: 00000000-0000-0000-0000-000000000000
+      AzureAd__ClientId: 00000000-0000-0000-0000-000000000000
+      AzureAd__ClientSecret: dev_secret
+      Email__SmtpHost: smtp4dev
+      Email__SmtpPort: 25
+      Email__SmtpUser: ""
+      Email__SmtpPassword: ""
+      Email__FromAddress: noreply@booking.local
+      Email__FromName: Workplace Booking (Dev)
+      Email__UseSsl: "false"
+      AllowedOrigins__0: http://localhost:3000
+      AllowedOrigins__1: http://localhost:5173
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/src
+      - ~/.nuget/packages:/root/.nuget/packages
+
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    container_name: booking-smtp4dev
+    ports:
+      - "25:25"
+      - "143:143"
+      - "2500:80"
+    volumes:
+      - smtp4dev_data:/smtp4dev
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: booking-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@booking.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  smtp4dev_data:
+  pgadmin_data:

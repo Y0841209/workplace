@@ -1,0 +1,169 @@
+name: Scheduled Security Scans
+
+on:
+  schedule:
+    # Daily at 2 AM UTC
+    - cron: '0 2 * * *'
+    # Weekly deep scan on Sundays
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # Daily CodeQL Analysis
+  codeql-daily:
+    name: CodeQL Daily Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp, javascript
+          config-file: .github/codeql-config.yml
+          
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # Weekly Deep Scan
+  codeql-weekly:
+    name: CodeQL Weekly Deep Scan
+    if: github.event.schedule == '0 3 * * 0'
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp, javascript
+          config-file: .github/codeql-config.yml
+          
+      - name: Perform Deep CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:weekly-deep"
+
+  # Dependency Scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          
+      - name: Run dotnet list package --vulnerable
+        run: |
+          dotnet list package --vulnerable --include-transitive
+        working-directory: ./src/backend
+        
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        working-directory: ./src/frontend
+        
+      - name: Run Trivy FS Scan (Backend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'src/backend'
+          format: 'sarif'
+          output: 'trivy-backend.sarif'
+          severity: 'HIGH,CRITICAL'
+          
+      - name: Run Trivy FS Scan (Frontend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'src/frontend'
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          severity: 'HIGH,CRITICAL'
+          
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-*.sarif'
+
+  # OWASP ZAP Scan
+  zap-scan:
+    name: OWASP ZAP DAST Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Start Application Stack
+        run: |
+          docker-compose -f infrastructure/docker/docker-compose.yml up -d postgres api frontend nginx
+          sleep 30  # Wait for services to be ready
+          
+      - name: Run OWASP ZAP Scan
+        uses: zaproxy/action-full-scan@v0.5.0
+        with:
+          target: 'https://localhost'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+          
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: report.html
+
+  # Container Scan
+  container-scan:
+    name: Container Image Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy on API Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/${{ github.repository }}/booking-api:latest'
+          format: 'sarif'
+          output: 'trivy-api.sarif'
+          severity: 'HIGH,CRITICAL'
+          
+      - name: Run Trivy on Frontend Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/${{ github.repository }}/booking-frontend:latest'
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          severity: 'HIGH,CRITICAL'
+          
+      - name: Upload Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-*.sarif'
+
+  # License Compliance
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check .NET Licenses
+        run: |
+          dotnet tool install --global dotnet-licenses
+          dotnet licenses list --project ./src/backend/WorkplaceBooking.sln
+          
+      - name: Check NPM Licenses
+        run: |
+          npm install -g license-checker
+          license-checker --production --csv > licenses.csv
+        working-directory: ./src/frontend

@@ -1,0 +1,484 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop, 'release/**']
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20.x'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ==========================================
+  # LINT & FORMAT
+  # ==========================================
+  lint-and-format:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Install .NET tools
+        run: |
+          dotnet tool install --global dotnet-format
+          dotnet tool install --global dotnet-outdated-tool
+
+      - name: Check formatting (Backend)
+        run: dotnet format --verify-no-changes --verbosity detailed
+
+      - name: Check formatting (Frontend)
+        working-directory: ./src/frontend
+        run: |
+          npm ci
+          npm run lint
+
+      - name: Check outdated packages (Backend)
+        run: dotnet outdated --fail
+
+      - name: Check outdated packages (Frontend)
+        working-directory: ./src/frontend
+        run: npm outdated --fail-on-error || true
+
+  # ==========================================
+  # BACKEND UNIT TESTS
+  # ==========================================
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+
+      - name: Restore dependencies
+        run: dotnet restore backend/WorkplaceBooking.sln
+
+      - name: Build
+        run: dotnet build backend/WorkplaceBooking.sln --configuration Release --no-restore
+
+      - name: Run Unit Tests
+        run: |
+          dotnet test backend/WorkplaceBooking.sln \
+            --configuration Release \
+            --no-build \
+            --filter "FullyQualifiedName!~IntegrationTests" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=unit-tests.trx"
+
+      - name: Upload Coverage (Backend)
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./TestResults/**/coverage.cobertura.xml
+          flags: backend
+          fail_ci_if_error: false
+
+  # ==========================================
+  # BACKEND INTEGRATION TESTS
+  # ==========================================
+  backend-integration-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: booking_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U test -d booking_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+
+      - name: Restore and Build
+        run: |
+          dotnet restore backend/WorkplaceBooking.sln
+          dotnet build backend/WorkplaceBooking.sln --configuration Release --no-restore
+
+      - name: Run Integration Tests
+        run: |
+          dotnet test backend/WorkplaceBooking.sln \
+            --configuration Release \
+            --no-build \
+            --filter "Category=Integration" \
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=integration-tests.trx"
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Database=booking_test;Username=test;Password=test"
+
+  # ==========================================
+  # FRONTEND UNIT TESTS
+  # ==========================================
+  frontend-unit-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./src/frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type Check
+        run: npm run typecheck
+
+      - name: Run Unit Tests
+        run: npm run test:unit
+
+      - name: Upload Coverage (Frontend)
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: frontend
+          fail_ci_if_error: false
+
+  # ==========================================
+  # FRONTEND E2E TESTS
+  # ==========================================
+  frontend-e2e-tests:
+    name: Frontend E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ./src/frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+  # ==========================================
+  # SECURITY - CODEQL
+  # ==========================================
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [csharp, javascript]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-extended,+security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ==========================================
+  # SECURITY - DEPENDENCY SCANNING
+  # ==========================================
+  dependency-scan:
+    name: Dependency Scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy (Backend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'src/backend'
+          format: 'sarif'
+          output: 'trivy-backend.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+      - name: Run Trivy (Frontend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'src/frontend'
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-*.sarif'
+
+  # ==========================================
+  # SECURITY - SECRET SCANNING
+  # ==========================================
+  secret-scan:
+    name: Secret Scan (TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --json --fail
+
+  # ==========================================
+  # DOCKER BUILD (Multi-arch)
+  # ==========================================
+  docker-build:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: [backend-unit-tests, backend-integration-tests, frontend-unit-tests, frontend-e2e-tests, security-scan, secret-scan]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - context: src/backend
+            dockerfile: src/backend/src/WorkplaceBooking.Api/Dockerfile
+            image: booking-api
+          - context: src/frontend
+            dockerfile: src/frontend/Dockerfile
+            image: booking-frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ==========================================
+  # SECURITY - CONTAINER SCAN
+  # ==========================================
+  container-scan:
+    name: Container Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - name: Run Trivy on API Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/booking-api:latest
+          format: 'sarif'
+          output: 'trivy-api.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Run Trivy on Frontend Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/booking-frontend:latest
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Container Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-*.sarif'
+
+  # ==========================================
+  # DEPLOY DEV
+  # ==========================================
+  deploy-dev:
+    name: Deploy to DEV
+    runs-on: ubuntu-latest
+    needs: [docker-build, container-scan]
+    if: github.ref == 'refs/heads/develop'
+    environment: dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to DEV
+        run: |
+          echo "Deploying to DEV environment..."
+          # kubectl set image deployment/booking-api booking-api=${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/booking-api:${{ github.sha }}
+          # kubectl set image deployment/booking-frontend booking-frontend=${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/booking-frontend:${{ github.sha }}
+          # kubectl rollout status deployment/booking-api -n dev
+          # kubectl rollout status deployment/booking-frontend -n dev
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG_DEV }}
+
+      - name: Run Smoke Tests
+        run: |
+          echo "Running smoke tests against DEV..."
+          # curl -f https://dev.booking.company.com/health/live
+          # curl -f https://dev.booking.company.com/api/v1/resources
+
+  # ==========================================
+  # DEPLOY QA
+  # ==========================================
+  deploy-qa:
+    name: Deploy to QA
+    runs-on: ubuntu-latest
+    needs: [docker-build, container-scan]
+    if: github.ref == 'refs/heads/main'
+    environment: qa
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to QA
+        run: |
+          echo "Deploying to QA environment..."
+          # kubectl set image deployment/booking-api booking-api=${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/booking-api:${{ github.sha }}
+          # kubectl rollout status deployment/booking-api -n qa
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG_QA }}
+
+      - name: Run Contract Tests
+        run: |
+          echo "Running contract tests against QA..."
+          # npm run test:contract
+
+      - name: Run Smoke Tests
+        run: |
+          echo "Running smoke tests against QA..."
+          # curl -f https://qa.booking.company.com/health/live
+
+  # ==========================================
+  # DEPLOY PROD
+  # ==========================================
+  deploy-prod:
+    name: Deploy to PROD
+    runs-on: ubuntu-latest
+    needs: [deploy-qa]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to PRODUCTION..."
+          # kubectl set image deployment/booking-api booking-api=${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/booking-api:${{ github.sha }}
+          # kubectl rollout status deployment/booking-api -n production
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG_PROD }}
+
+      - name: Run Smoke Tests
+        run: |
+          echo "Running smoke tests against PROD..."
+          # curl -f https://booking.company.com/health/live
+
+      - name: Create Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true

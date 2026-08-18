@@ -1,0 +1,130 @@
+version: 2
+updates:
+  # .NET Dependencies
+  - package-ecosystem: "nuget"
+    directory: "/src/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "nuget"
+      - "backend"
+    groups:
+      microsoft-packages:
+        patterns:
+          - "Microsoft.*"
+          - "System.*"
+      aspnetcore-packages:
+        patterns:
+          - "AspNetCore.*"
+      entityframework-packages:
+        patterns:
+          - "EntityFrameworkCore*"
+          - "Npgsql.EntityFrameworkCore*"
+      testing-packages:
+        patterns:
+          - "xunit*"
+          - "Moq*"
+          - "FluentAssertions*"
+          - "coverlet*"
+      serilog-packages:
+        patterns:
+          - "Serilog*"
+      mediatr-packages:
+        patterns:
+          - "MediatR*"
+      automapper-packages:
+        patterns:
+          - "AutoMapper*"
+      fluentvalidation-packages:
+        patterns:
+          - "FluentValidation*"
+      ardalis-packages:
+        patterns:
+          - "Ardalis.*"
+      openTelemetry-packages:
+        patterns:
+          - "OpenTelemetry*"
+
+  # NPM Dependencies
+  - package-ecosystem: "npm"
+    directory: "/src/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+      - "frontend"
+    groups:
+      react-packages:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      mui-packages:
+        patterns:
+          - "@mui/*"
+          - "@emotion/*"
+      tanstack-packages:
+        patterns:
+          - "@tanstack/*"
+      testing-packages:
+        patterns:
+          - "@testing-library/*"
+          - "vitest*"
+          - "@vitest/*"
+          - "jsdom"
+          - "@playwright/*"
+      build-tools:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+          - "typescript"
+          - "eslint*"
+          - "prettier*"
+      axios-packages:
+        patterns:
+          - "axios*"
+      date-fns-packages:
+        patterns:
+          - "date-fns*"
+      zod-packages:
+        patterns:
+          - "zod*"
+          - "@hookform/*"
+      zod-validation:
+        patterns:
+          - "@hookform/*"
+
+  # Docker Dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # GitHub Actions Dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
