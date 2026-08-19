@@ -1,5 +1,8 @@
+using Ardalis.Specification;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
+using WorkplaceBooking.Domain.Specifications;
+using WorkplaceBooking.SharedKernel.Primitives;
 
 namespace WorkplaceBooking.Domain.Services;
 
@@ -25,13 +28,13 @@ public class AvailabilityService : IAvailabilityService
         Guid? excludeReservationId = null)
     {
         // First check resource exists and is active
-        var resource = await _resourceRepository.GetByIdAsync(new ResourceByIdSpec(resourceId), CancellationToken.None);
+        var resource = await _resourceRepository.GetByIdAsync(resourceId, cancellationToken);
         if (resource == null || !resource.Active || !resource.Reservable)
             return false;
 
         // Check for overlapping reservations
         var spec = new OverlappingReservationSpec(resourceId, date, startTime, endTime, excludeReservationId);
-        var overlapping = await _reservationRepository.AnyAsync(spec, CancellationToken.None);
+        var overlapping = await _reservationRepository.AnyAsync(spec, cancellationToken);
         return !overlapping;
     }
 }

@@ -1,3 +1,7 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+using WorkplaceBooking.SharedKernel.Exceptions;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class UserBusinessProfile : Entity, IAuditableEntity
@@ -42,13 +46,13 @@ public class UserBusinessProfile : Entity, IAuditableEntity
         string? assignmentReason)
     {
         if (userId == Guid.Empty)
-            return Result.Failure(new Error("USER_PROFILE_USER_REQUIRED", "User is required"));
+            return Result.Failure<UserBusinessProfile>(new Error("USER_PROFILE_USER_REQUIRED", "User is required"));
 
         if (string.IsNullOrWhiteSpace(profileCode))
-            return Result.Failure(new Error("USER_PROFILE_CODE_REQUIRED", "Profile code is required"));
+            return Result.Failure<UserBusinessProfile>(new Error("USER_PROFILE_CODE_REQUIRED", "Profile code is required"));
 
         if (expiresAt.HasValue && expiresAt < validFrom)
-            return Result.Failure(new Error("USER_PROFILE_DATES_INVALID", "Expires date must be after valid from date"));
+            return Result.Failure<UserBusinessProfile>(new Error("USER_PROFILE_DATES_INVALID", "Expires date must be after valid from date"));
 
         return Result.Success(new UserBusinessProfile(Guid.NewGuid(), userId, profileCode, validFrom, expiresAt, assignedByUserId, assignmentReason));
     }

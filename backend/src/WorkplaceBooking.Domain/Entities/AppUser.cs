@@ -1,6 +1,9 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
-public class AppUser : AggregateRoot
+public class AppUser : AggregateRoot, IAuditableEntity
 {
     public Guid EntraObjectId { get; private set; }
     public string Email { get; private set; } = string.Empty;
@@ -28,10 +31,10 @@ public class AppUser : AggregateRoot
     public static Result<AppUser> Create(Guid entraObjectId, string email, string displayName)
     {
         if (string.IsNullOrWhiteSpace(email))
-            return Result.Failure(new Error("USER_EMAIL_REQUIRED", "Email is required"));
+            return Result.Failure<AppUser>(new Error("USER_EMAIL_REQUIRED", "Email is required"));
 
         if (string.IsNullOrWhiteSpace(displayName))
-            return Result.Failure(new Error("USER_NAME_REQUIRED", "Display name is required"));
+            return Result.Failure<AppUser>(new Error("USER_NAME_REQUIRED", "Display name is required"));
 
         return Result.Success(new AppUser(Guid.NewGuid(), entraObjectId, email, displayName));
     }

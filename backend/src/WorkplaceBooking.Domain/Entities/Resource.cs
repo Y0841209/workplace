@@ -1,3 +1,7 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+using WorkplaceBooking.SharedKernel.Exceptions;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class Resource : Entity, IAuditableEntity
@@ -53,32 +57,32 @@ public class Resource : Entity, IAuditableEntity
         Guid? publicQrId)
     {
         if (string.IsNullOrWhiteSpace(code))
-            return Result.Failure(new Error("RESOURCE_CODE_REQUIRED", "Resource code is required"));
+            return Result.Failure<Resource>(new Error("RESOURCE_CODE_REQUIRED", "Resource code is required"));
 
         if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure(new Error("RESOURCE_NAME_REQUIRED", "Resource name is required"));
+            return Result.Failure<Resource>(new Error("RESOURCE_NAME_REQUIRED", "Resource name is required"));
 
         if (string.IsNullOrWhiteSpace(resourceTypeCode))
-            return Result.Failure(new Error("RESOURCE_TYPE_REQUIRED", "Resource type is required"));
+            return Result.Failure<Resource>(new Error("RESOURCE_TYPE_REQUIRED", "Resource type is required"));
 
         if (locationId == Guid.Empty)
-            return Result.Failure(new Error("RESOURCE_LOCATION_REQUIRED", "Location is required"));
+            return Result.Failure<Resource>(new Error("RESOURCE_LOCATION_REQUIRED", "Location is required"));
 
         if (floorId == Guid.Empty)
-            return Result.Failure(new Error("RESOURCE_FLOOR_REQUIRED", "Floor is required"));
+            return Result.Failure<Resource>(new Error("RESOURCE_FLOOR_REQUIRED", "Floor is required"));
 
         if (capacity <= 0)
-            return Result.Failure(new Error("RESOURCE_CAPACITY_INVALID", "Capacity must be positive"));
+            return Result.Failure<Resource>(new Error("RESOURCE_CAPACITY_INVALID", "Capacity must be positive"));
 
         // QR Policy validation
         var requiresQr = resourceTypeCode == "OPEN_WORKSPACE" || resourceTypeCode == "CLOSED_OFFICE";
         var forbidsQr = resourceTypeCode == "MEETING_ROOM";
 
         if (requiresQr && publicQrId == null)
-            return Result.Failure(new Error("RESOURCE_QR_REQUIRED", "QR code is required for this resource type"));
+            return Result.Failure<Resource>(new Error("RESOURCE_QR_REQUIRED", "QR code is required for this resource type"));
 
         if (forbidsQr && publicQrId != null)
-            return Result.Failure(new Error("RESOURCE_QR_FORBIDDEN", "QR code is not allowed for meeting rooms"));
+            return Result.Failure<Resource>(new Error("RESOURCE_QR_FORBIDDEN", "QR code is not allowed for meeting rooms"));
 
         return Result.Success(new Resource(Guid.NewGuid(), code, name, resourceTypeCode, locationId, floorId, zoneId, capacity, publicQrId));
     }

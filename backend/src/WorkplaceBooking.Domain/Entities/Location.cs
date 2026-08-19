@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class Location : Entity, IAuditableEntity
@@ -29,10 +32,10 @@ public class Location : Entity, IAuditableEntity
     public static Result<Location> Create(string code, string name, string city, string country, string timezone)
     {
         if (string.IsNullOrWhiteSpace(code))
-            return Result.Failure(new Error("LOCATION_CODE_REQUIRED", "Location code is required"));
+            return Result.Failure<Location>(new Error("LOCATION_CODE_REQUIRED", "Location code is required"));
 
         if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure(new Error("LOCATION_NAME_REQUIRED", "Location name is required"));
+            return Result.Failure<Location>(new Error("LOCATION_NAME_REQUIRED", "Location name is required"));
 
         return Result.Success(new Location(Guid.NewGuid(), code, name, city, country, timezone));
     }

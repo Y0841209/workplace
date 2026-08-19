@@ -1,4 +1,5 @@
 using WorkplaceBooking.Domain.Entities;
+using WorkplaceBooking.SharedKernel.Results;
 
 namespace WorkplaceBooking.Domain.Interfaces;
 

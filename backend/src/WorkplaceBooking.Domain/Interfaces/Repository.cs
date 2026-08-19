@@ -1,3 +1,6 @@
+using Ardalis.Specification;
+using WorkplaceBooking.SharedKernel.Primitives;
+
 namespace WorkplaceBooking.Domain.Interfaces;
 
 public interface IRepository<T> where T : Entity
@@ -6,6 +9,7 @@ public interface IRepository<T> where T : Entity
     Task<T?> FirstOrDefaultAsync(ISpecification<T> spec, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec, CancellationToken cancellationToken = default);
     Task<int> CountAsync(ISpecification<T> spec, CancellationToken cancellationToken = default);
+    Task<bool> AnyAsync(ISpecification<T> spec, CancellationToken cancellationToken = default);
     Task AddAsync(T entity, CancellationToken cancellationToken = default);
     void Update(T entity);
     void Delete(T entity);

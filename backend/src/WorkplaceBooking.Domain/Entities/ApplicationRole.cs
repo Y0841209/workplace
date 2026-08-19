@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class ApplicationRole : Entity
@@ -21,10 +24,10 @@ public class ApplicationRole : Entity
     public static Result<ApplicationRole> Create(string code, string name, string? description = null)
     {
         if (string.IsNullOrWhiteSpace(code))
-            return Result.Failure(new Error("ROLE_CODE_REQUIRED", "Role code is required"));
+            return Result.Failure<ApplicationRole>(new Error("ROLE_CODE_REQUIRED", "Role code is required"));
 
         if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure(new Error("ROLE_NAME_REQUIRED", "Role name is required"));
+            return Result.Failure<ApplicationRole>(new Error("ROLE_NAME_REQUIRED", "Role name is required"));
 
         return Result.Success(new ApplicationRole(code, name, description));
     }

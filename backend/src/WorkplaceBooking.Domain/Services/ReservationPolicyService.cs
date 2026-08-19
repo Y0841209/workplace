@@ -1,5 +1,8 @@
+using Ardalis.Specification;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
+using WorkplaceBooking.Domain.Specifications;
+using WorkplaceBooking.SharedKernel.Primitives;
 
 namespace WorkplaceBooking.Domain.Services;
 

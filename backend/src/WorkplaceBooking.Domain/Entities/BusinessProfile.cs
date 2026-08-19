@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class BusinessProfile : Entity
@@ -19,10 +22,10 @@ public class BusinessProfile : Entity
     public static Result<BusinessProfile> Create(string code, string name)
     {
         if (string.IsNullOrWhiteSpace(code))
-            return Result.Failure(new Error("PROFILE_CODE_REQUIRED", "Profile code is required"));
+            return Result.Failure<BusinessProfile>(new Error("PROFILE_CODE_REQUIRED", "Profile code is required"));
 
         if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure(new Error("PROFILE_NAME_REQUIRED", "Profile name is required"));
+            return Result.Failure<BusinessProfile>(new Error("PROFILE_NAME_REQUIRED", "Profile name is required"));
 
         return Result.Success(new BusinessProfile(code, name));
     }

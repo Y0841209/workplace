@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class Zone : Entity, IAuditableEntity
@@ -28,13 +31,13 @@ public class Zone : Entity, IAuditableEntity
     public static Result<Zone> Create(Guid floorId, string code, string name)
     {
         if (floorId == Guid.Empty)
-            return Result.Failure(new Error("ZONE_FLOOR_REQUIRED", "Floor is required"));
+            return Result.Failure<Zone>(new Error("ZONE_FLOOR_REQUIRED", "Floor is required"));
 
         if (string.IsNullOrWhiteSpace(code))
-            return Result.Failure(new Error("ZONE_CODE_REQUIRED", "Zone code is required"));
+            return Result.Failure<Zone>(new Error("ZONE_CODE_REQUIRED", "Zone code is required"));
 
         if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure(new Error("ZONE_NAME_REQUIRED", "Zone name is required"));
+            return Result.Failure<Zone>(new Error("ZONE_NAME_REQUIRED", "Zone name is required"));
 
         return Result.Success(new Zone(Guid.NewGuid(), floorId, code, name));
     }

@@ -1,3 +1,7 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+using WorkplaceBooking.SharedKernel.Exceptions;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class AppSettings : Entity, IAuditableEntity
@@ -45,13 +49,13 @@ public class AppSettings : Entity, IAuditableEntity
         bool showOccupantNameToUsers)
     {
         if (maximumFutureActiveReservations <= 0)
-            return Result.Failure(new Error("APP_SETTINGS_INVALID_LIMIT", "Maximum future active reservations must be positive"));
+            return Result.Failure<AppSettings>(new Error("APP_SETTINGS_INVALID_LIMIT", "Maximum future active reservations must be positive"));
 
         if (minimumDurationMinutes < 60)
-            return Result.Failure(new Error("APP_SETTINGS_INVALID_DURATION", "Minimum duration must be at least 60 minutes"));
+            return Result.Failure<AppSettings>(new Error("APP_SETTINGS_INVALID_DURATION", "Minimum duration must be at least 60 minutes"));
 
         if (reminderMinutesBefore < 0)
-            return Result.Failure(new Error("APP_SETTINGS_INVALID_REMINDER", "Reminder minutes cannot be negative"));
+            return Result.Failure<AppSettings>(new Error("APP_SETTINGS_INVALID_REMINDER", "Reminder minutes cannot be negative"));
 
         return Result.Success(new AppSettings(
             maximumFutureActiveReservations,

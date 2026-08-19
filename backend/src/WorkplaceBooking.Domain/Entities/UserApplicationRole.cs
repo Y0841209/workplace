@@ -1,3 +1,7 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+using WorkplaceBooking.SharedKernel.Exceptions;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class UserApplicationRole : Entity, IAuditableEntity
@@ -42,13 +46,13 @@ public class UserApplicationRole : Entity, IAuditableEntity
         string? assignmentReason)
     {
         if (userId == Guid.Empty)
-            return Result.Failure(new Error("USER_ROLE_USER_REQUIRED", "User is required"));
+            return Result.Failure<UserApplicationRole>(new Error("USER_ROLE_USER_REQUIRED", "User is required"));
 
         if (string.IsNullOrWhiteSpace(roleCode))
-            return Result.Failure(new Error("USER_ROLE_CODE_REQUIRED", "Role code is required"));
+            return Result.Failure<UserApplicationRole>(new Error("USER_ROLE_CODE_REQUIRED", "Role code is required"));
 
         if (expiresAt.HasValue && expiresAt < validFrom)
-            return Result.Failure(new Error("USER_ROLE_DATES_INVALID", "Expires date must be after valid from date"));
+            return Result.Failure<UserApplicationRole>(new Error("USER_ROLE_DATES_INVALID", "Expires date must be after valid from date"));
 
         return Result.Success(new UserApplicationRole(Guid.NewGuid(), userId, roleCode, validFrom, expiresAt, assignedByUserId, assignmentReason));
     }

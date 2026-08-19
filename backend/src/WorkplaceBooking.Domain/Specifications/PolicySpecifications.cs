@@ -3,6 +3,14 @@ using WorkplaceBooking.Domain.Entities;
 
 namespace WorkplaceBooking.Domain.Specifications;
 
+public static class SpecificationExtensions
+{
+    public static bool In<T>(this T value, params T[] values) where T : Enum
+    {
+        return values.Contains(value);
+    }
+}
+
 public class SingleAppSettingsSpec : Specification<AppSettings>
 {
     public SingleAppSettingsSpec()

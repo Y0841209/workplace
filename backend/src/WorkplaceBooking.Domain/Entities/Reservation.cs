@@ -1,3 +1,8 @@
+using WorkplaceBooking.Domain.Events;
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+using WorkplaceBooking.SharedKernel.Exceptions;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public enum ReservationStatus
@@ -37,7 +42,7 @@ public class Reservation : AggregateRoot, IAuditableEntity
     public AppUser? User { get; private set; }
     public AppUser? CreatedByUser { get; private set; }
     public AppUser? CancelledByUser { get; private set; }
-    public CheckIn? CheckIn { get; private set; }
+    public CheckIn? CheckInRecord { get; private set; }
 
     private Reservation() { }
 
@@ -80,26 +85,26 @@ public class Reservation : AggregateRoot, IAuditableEntity
         int? attendeeCount = null)
     {
         if (resourceId == Guid.Empty)
-            return Result.Failure(new Error("RESERVATION_RESOURCE_REQUIRED", "Resource is required"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_RESOURCE_REQUIRED", "Resource is required"));
 
         if (userId == Guid.Empty)
-            return Result.Failure(new Error("RESERVATION_USER_REQUIRED", "User is required"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_USER_REQUIRED", "User is required"));
 
         if (createdByUserId == Guid.Empty)
-            return Result.Failure(new Error("RESERVATION_CREATOR_REQUIRED", "Creator is required"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_CREATOR_REQUIRED", "Creator is required"));
 
         if (endTime <= startTime)
-            return Result.Failure(new Error("RESERVATION_TIME_ORDER_INVALID", "End time must be after start time"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_TIME_ORDER_INVALID", "End time must be after start time"));
 
         var duration = endTime - startTime;
         if (duration < TimeSpan.FromHours(1))
-            return Result.Failure(new Error("RESERVATION_MIN_DURATION", "Reservation must be at least 1 hour"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_MIN_DURATION", "Reservation must be at least 1 hour"));
 
         if (endTime > new TimeOnly(23, 59))
-            return Result.Failure(new Error("RESERVATION_MAX_END_TIME", "Reservation cannot end after 23:59"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_MAX_END_TIME", "Reservation cannot end after 23:59"));
 
         if (attendeeCount.HasValue && attendeeCount <= 0)
-            return Result.Failure(new Error("RESERVATION_ATTENDEE_COUNT_INVALID", "Attendee count must be positive"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_ATTENDEE_COUNT_INVALID", "Attendee count must be positive"));
 
         var reservation = new Reservation(Guid.NewGuid(), resourceId, userId, createdByUserId, reservationDate, startTime, endTime, title, description, attendeeCount);
         reservation.RaiseDomainEvent(new ReservationCreatedEvent(reservation));
@@ -119,32 +124,32 @@ public class Reservation : AggregateRoot, IAuditableEntity
     {
         // Only owner or support can modify
         if (UserId != modifiedByUserId && !isSupportUser)
-            return Result.Failure(new Error("RESERVATION_MODIFY_FORBIDDEN", "Only reservation owner or support can modify"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_MODIFY_FORBIDDEN", "Only reservation owner or support can modify"));
 
         // Support must provide reason
         if (isSupportUser && string.IsNullOrWhiteSpace(supportChangeReason))
-            return Result.Failure(new Error("RESERVATION_SUPPORT_REASON_REQUIRED", "Support must provide change reason"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_SUPPORT_REASON_REQUIRED", "Support must provide change reason"));
 
         // Cannot modify completed/cancelled reservations
         if (Status is ReservationStatus.COMPLETED or ReservationStatus.CANCELLED or ReservationStatus.NOT_CHECKED_IN)
-            return Result.Failure(new Error("RESERVATION_CANNOT_MODIFY", $"Cannot modify reservation with status {Status}"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_CANNOT_MODIFY", $"Cannot modify reservation with status {Status}"));
 
         var newDate = reservationDate ?? ReservationDate;
         var newStart = startTime ?? StartTime;
         var newEnd = endTime ?? EndTime;
 
         if (newEnd <= newStart)
-            return Result.Failure(new Error("RESERVATION_TIME_ORDER_INVALID", "End time must be after start time"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_TIME_ORDER_INVALID", "End time must be after start time"));
 
         var duration = newEnd - newStart;
         if (duration < TimeSpan.FromHours(1))
-            return Result.Failure(new Error("RESERVATION_MIN_DURATION", "Reservation must be at least 1 hour"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_MIN_DURATION", "Reservation must be at least 1 hour"));
 
         if (newEnd > new TimeOnly(23, 59))
-            return Result.Failure(new Error("RESERVATION_MAX_END_TIME", "Reservation cannot end after 23:59"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_MAX_END_TIME", "Reservation cannot end after 23:59"));
 
         if (attendeeCount.HasValue && attendeeCount <= 0)
-            return Result.Failure(new Error("RESERVATION_ATTENDEE_COUNT_INVALID", "Attendee count must be positive"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_ATTENDEE_COUNT_INVALID", "Attendee count must be positive"));
 
         // Apply changes
         if (reservationDate.HasValue) ReservationDate = reservationDate.Value;
@@ -164,13 +169,13 @@ public class Reservation : AggregateRoot, IAuditableEntity
     public Result Cancel(Guid cancelledByUserId, string? reason, bool isSupportUser = false)
     {
         if (UserId != cancelledByUserId && !isSupportUser)
-            return Result.Failure(new Error("RESERVATION_CANCEL_FORBIDDEN", "Only reservation owner or support can cancel"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_CANCEL_FORBIDDEN", "Only reservation owner or support can cancel"));
 
         if (isSupportUser && string.IsNullOrWhiteSpace(reason))
-            return Result.Failure(new Error("RESERVATION_SUPPORT_REASON_REQUIRED", "Support must provide cancellation reason"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_SUPPORT_REASON_REQUIRED", "Support must provide cancellation reason"));
 
         if (Status is ReservationStatus.CANCELLED or ReservationStatus.COMPLETED or ReservationStatus.NOT_CHECKED_IN)
-            return Result.Failure(new Error("RESERVATION_CANNOT_CANCEL", $"Cannot cancel reservation with status {Status}"));
+            return Result.Failure<Reservation>(new Error("RESERVATION_CANNOT_CANCEL", $"Cannot cancel reservation with status {Status}"));
 
         Status = ReservationStatus.CANCELLED;
         CancelledAt = DateTimeOffset.UtcNow;
@@ -185,10 +190,10 @@ public class Reservation : AggregateRoot, IAuditableEntity
     public Result CheckIn(Guid checkedInByUserId, string scannedPublicQrId)
     {
         if (UserId != checkedInByUserId)
-            return Result.Failure(new Error("CHECKIN_OWNERSHIP_REQUIRED", "Only reservation owner can check in"));
+            return Result.Failure<Reservation>(new Error("CHECKIN_OWNERSHIP_REQUIRED", "Only reservation owner can check in"));
 
         if (Status != ReservationStatus.CONFIRMED)
-            return Result.Failure(new Error("CHECKIN_INVALID_STATUS", $"Cannot check in reservation with status {Status}"));
+            return Result.Failure<Reservation>(new Error("CHECKIN_INVALID_STATUS", $"Cannot check in reservation with status {Status}"));
 
         // Resource type validation is done in checkin trigger
 
@@ -203,7 +208,7 @@ public class Reservation : AggregateRoot, IAuditableEntity
     public Result CheckOut()
     {
         if (Status != ReservationStatus.CHECKED_IN)
-            return Result.Failure(new Error("CHECKOUT_INVALID_STATUS", "Only checked-in reservations can be checked out"));
+            return Result.Failure<Reservation>(new Error("CHECKOUT_INVALID_STATUS", "Only checked-in reservations can be checked out"));
 
         Status = ReservationStatus.CHECKED_OUT;
         CheckedOutAt = DateTimeOffset.UtcNow;

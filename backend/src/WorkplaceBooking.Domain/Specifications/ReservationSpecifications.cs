@@ -33,33 +33,6 @@ public class MyReservationsSpec : Specification<Reservation>
     }
 }
 
-public class AvailableResourcesSpec : Specification<Resource>
-{
-    public AvailableResourcesSpec(
-        DateOnly date,
-        TimeOnly startTime,
-        TimeOnly endTime,
-        string? resourceTypeCode = null,
-        Guid? floorId = null,
-        Guid? zoneId = null,
-        int? minCapacity = null)
-    {
-        Query.Where(r => r.Active && r.Reservable);
-
-        if (!string.IsNullOrWhiteSpace(resourceTypeCode))
-            Query.Where(r => r.ResourceTypeCode == resourceTypeCode);
-
-        if (floorId.HasValue)
-            Query.Where(r => r.FloorId == floorId.Value);
-
-        if (zoneId.HasValue)
-            Query.Where(r => r.ZoneId == zoneId.Value);
-
-        if (minCapacity.HasValue)
-            Query.Where(r => r.Capacity >= minCapacity.Value);
-    }
-}
-
 public class ResourceByPublicQrSpec : Specification<Resource>
 {
     public ResourceByPublicQrSpec(Guid publicQrId)

@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class ResourceType : Entity
@@ -23,10 +26,10 @@ public class ResourceType : Entity
     public static Result<ResourceType> Create(string code, string name, bool qrRequired, bool checkinRequired)
     {
         if (string.IsNullOrWhiteSpace(code))
-            return Result.Failure(new Error("RESOURCE_TYPE_CODE_REQUIRED", "Resource type code is required"));
+            return Result.Failure<ResourceType>(new Error("RESOURCE_TYPE_CODE_REQUIRED", "Resource type code is required"));
 
         if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure(new Error("RESOURCE_TYPE_NAME_REQUIRED", "Resource type name is required"));
+            return Result.Failure<ResourceType>(new Error("RESOURCE_TYPE_NAME_REQUIRED", "Resource type name is required"));
 
         return Result.Success(new ResourceType(code, name, qrRequired, checkinRequired));
     }

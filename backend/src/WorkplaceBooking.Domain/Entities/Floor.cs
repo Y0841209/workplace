@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class Floor : Entity, IAuditableEntity
@@ -30,16 +33,16 @@ public class Floor : Entity, IAuditableEntity
     public static Result<Floor> Create(Guid locationId, int floorNumber, string code, string name)
     {
         if (locationId == Guid.Empty)
-            return Result.Failure(new Error("FLOOR_LOCATION_REQUIRED", "Location is required"));
+            return Result.Failure<Floor>(new Error("FLOOR_LOCATION_REQUIRED", "Location is required"));
 
         if (floorNumber <= 0)
-            return Result.Failure(new Error("FLOOR_NUMBER_INVALID", "Floor number must be positive"));
+            return Result.Failure<Floor>(new Error("FLOOR_NUMBER_INVALID", "Floor number must be positive"));
 
         if (string.IsNullOrWhiteSpace(code))
-            return Result.Failure(new Error("FLOOR_CODE_REQUIRED", "Floor code is required"));
+            return Result.Failure<Floor>(new Error("FLOOR_CODE_REQUIRED", "Floor code is required"));
 
         if (string.IsNullOrWhiteSpace(name))
-            return Result.Failure(new Error("FLOOR_NAME_REQUIRED", "Floor name is required"));
+            return Result.Failure<Floor>(new Error("FLOOR_NAME_REQUIRED", "Floor name is required"));
 
         return Result.Success(new Floor(Guid.NewGuid(), locationId, floorNumber, code, name));
     }

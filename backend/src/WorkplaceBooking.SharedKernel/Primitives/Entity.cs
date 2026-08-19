@@ -32,3 +32,9 @@ public abstract class AggregateRoot : Entity
         _domainEvents.Clear();
     }
 }
+
+public interface IAuditableEntity
+{
+    DateTimeOffset CreatedAt { get; }
+    DateTimeOffset UpdatedAt { get; }
+}

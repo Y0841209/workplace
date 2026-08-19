@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class ResourceAccessPolicy : Entity, IAuditableEntity
@@ -38,10 +41,10 @@ public class ResourceAccessPolicy : Entity, IAuditableEntity
         bool canModifyOwn)
     {
         if (string.IsNullOrWhiteSpace(resourceTypeCode))
-            return Result.Failure(new Error("ACCESS_POLICY_RESOURCE_TYPE_REQUIRED", "Resource type is required"));
+            return Result.Failure<ResourceAccessPolicy>(new Error("ACCESS_POLICY_RESOURCE_TYPE_REQUIRED", "Resource type is required"));
 
         if (string.IsNullOrWhiteSpace(businessProfileCode))
-            return Result.Failure(new Error("ACCESS_POLICY_PROFILE_REQUIRED", "Business profile is required"));
+            return Result.Failure<ResourceAccessPolicy>(new Error("ACCESS_POLICY_PROFILE_REQUIRED", "Business profile is required"));
 
         return Result.Success(new ResourceAccessPolicy(Guid.NewGuid(), resourceTypeCode, businessProfileCode, canView, canReserve, canModifyOwn));
     }

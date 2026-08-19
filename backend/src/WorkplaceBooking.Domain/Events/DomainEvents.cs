@@ -1,3 +1,6 @@
+using WorkplaceBooking.Domain.Entities;
+using WorkplaceBooking.SharedKernel.Primitives;
+
 namespace WorkplaceBooking.Domain.Events;
 
 public record ReservationCreatedEvent(Reservation Reservation) : IDomainEvent
@@ -103,5 +106,4 @@ public record ResourceDeletedEvent(Guid ResourceId) : IDomainEvent
 {
     public DateTime OccurredOn { get; } = DateTime.UtcNow;
     public Guid EventId { get; } = Guid.NewGuid();
-    public Guid ResourceId { get; }
 }

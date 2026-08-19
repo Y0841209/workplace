@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public enum NotificationType
@@ -74,16 +77,16 @@ public class NotificationOutbox : Entity, IAuditableEntity
         DateTimeOffset scheduledAt)
     {
         if (recipientUserId == Guid.Empty)
-            return Result.Failure(new Error("NOTIFICATION_RECIPIENT_REQUIRED", "Recipient user is required"));
+            return Result.Failure<NotificationOutbox>(new Error("NOTIFICATION_RECIPIENT_REQUIRED", "Recipient user is required"));
 
         if (string.IsNullOrWhiteSpace(recipientEmail))
-            return Result.Failure(new Error("NOTIFICATION_EMAIL_REQUIRED", "Recipient email is required"));
+            return Result.Failure<NotificationOutbox>(new Error("NOTIFICATION_EMAIL_REQUIRED", "Recipient email is required"));
 
         if (string.IsNullOrWhiteSpace(subject))
-            return Result.Failure(new Error("NOTIFICATION_SUBJECT_REQUIRED", "Subject is required"));
+            return Result.Failure<NotificationOutbox>(new Error("NOTIFICATION_SUBJECT_REQUIRED", "Subject is required"));
 
         if (string.IsNullOrWhiteSpace(body))
-            return Result.Failure(new Error("NOTIFICATION_BODY_REQUIRED", "Body is required"));
+            return Result.Failure<NotificationOutbox>(new Error("NOTIFICATION_BODY_REQUIRED", "Body is required"));
 
         return Result.Success(new NotificationOutbox(Guid.NewGuid(), reservationId, recipientUserId, recipientEmail, type, subject, body, scheduledAt));
     }

@@ -1,3 +1,7 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+using WorkplaceBooking.SharedKernel.Exceptions;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public class ReservationException : Entity, IAuditableEntity
@@ -45,19 +49,19 @@ public class ReservationException : Entity, IAuditableEntity
         Guid createdByUserId)
     {
         if (userId == Guid.Empty)
-            return Result.Failure(new Error("EXCEPTION_USER_REQUIRED", "User is required"));
+            return Result.Failure<ReservationException>(new Error("EXCEPTION_USER_REQUIRED", "User is required"));
 
         if (maximumFutureActiveReservations <= 0)
-            return Result.Failure(new Error("EXCEPTION_LIMIT_INVALID", "Maximum reservations must be positive"));
+            return Result.Failure<ReservationException>(new Error("EXCEPTION_LIMIT_INVALID", "Maximum reservations must be positive"));
 
         if (expiresAt < validFrom)
-            return Result.Failure(new Error("EXCEPTION_DATES_INVALID", "Expires date must be after valid from date"));
+            return Result.Failure<ReservationException>(new Error("EXCEPTION_DATES_INVALID", "Expires date must be after valid from date"));
 
         if (string.IsNullOrWhiteSpace(reason))
-            return Result.Failure(new Error("EXCEPTION_REASON_REQUIRED", "Reason is required"));
+            return Result.Failure<ReservationException>(new Error("EXCEPTION_REASON_REQUIRED", "Reason is required"));
 
         if (createdByUserId == Guid.Empty)
-            return Result.Failure(new Error("EXCEPTION_CREATOR_REQUIRED", "Creator is required"));
+            return Result.Failure<ReservationException>(new Error("EXCEPTION_CREATOR_REQUIRED", "Creator is required"));
 
         return Result.Success(new ReservationException(Guid.NewGuid(), userId, maximumFutureActiveReservations, appliesToResourceTypeCode, validFrom, expiresAt, reason, createdByUserId));
     }

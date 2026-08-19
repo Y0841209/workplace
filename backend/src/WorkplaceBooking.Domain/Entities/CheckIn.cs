@@ -1,3 +1,6 @@
+using WorkplaceBooking.SharedKernel.Primitives;
+using WorkplaceBooking.SharedKernel.Results;
+
 namespace WorkplaceBooking.Domain.Entities;
 
 public enum CheckInMethod
@@ -56,16 +59,16 @@ public class CheckIn : Entity, IAuditableEntity
         string? userAgent = null)
     {
         if (reservationId == Guid.Empty)
-            return Result.Failure(new Error("CHECKIN_RESERVATION_REQUIRED", "Reservation is required"));
+            return Result.Failure<CheckIn>(new Error("CHECKIN_RESERVATION_REQUIRED", "Reservation is required"));
 
         if (resourceId == Guid.Empty)
-            return Result.Failure(new Error("CHECKIN_RESOURCE_REQUIRED", "Resource is required"));
+            return Result.Failure<CheckIn>(new Error("CHECKIN_RESOURCE_REQUIRED", "Resource is required"));
 
         if (userId == Guid.Empty)
-            return Result.Failure(new Error("CHECKIN_USER_REQUIRED", "User is required"));
+            return Result.Failure<CheckIn>(new Error("CHECKIN_USER_REQUIRED", "User is required"));
 
         if (scannedPublicQrId == Guid.Empty)
-            return Result.Failure(new Error("CHECKIN_QR_REQUIRED", "Scanned QR is required"));
+            return Result.Failure<CheckIn>(new Error("CHECKIN_QR_REQUIRED", "Scanned QR is required"));
 
         return Result.Success(new CheckIn(Guid.NewGuid(), reservationId, resourceId, userId, scannedPublicQrId, null, null));
     }
