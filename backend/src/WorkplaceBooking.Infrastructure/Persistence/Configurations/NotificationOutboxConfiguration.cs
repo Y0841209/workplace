@@ -34,7 +34,10 @@ public class NotificationOutboxConfiguration : IEntityTypeConfiguration<Notifica
             .HasForeignKey(x => x.RecipientUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasCheckConstraint("ck_notification_retry", "retry_count >= 0");
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_notification_retry", "retry_count >= 0");
+        });
 
         builder.HasIndex(x => new { x.Status, x.ScheduledAt })
             .HasFilter("status = 'PENDING'")

@@ -1,3 +1,6 @@
+using Ardalis.Specification;
+using Ardalis.Specification.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
 using WorkplaceBooking.Domain.Specifications;
@@ -23,20 +26,26 @@ public class ReservationRepository : IRepository<Reservation>
 
     public async Task<Reservation?> FirstOrDefaultAsync(ISpecification<Reservation> spec, CancellationToken cancellationToken = default)
     {
-        var query = ApplySpecification(spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Reservations.AsQueryable(), spec);
         return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Reservation>> ListAsync(ISpecification<Reservation> spec, CancellationToken cancellationToken = default)
     {
-        var query = ApplySpecification(spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Reservations.AsQueryable(), spec);
         return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<int> CountAsync(ISpecification<Reservation> spec, CancellationToken cancellationToken = default)
     {
-        var query = ApplySpecification(spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Reservations.AsQueryable(), spec);
         return await query.CountAsync(cancellationToken);
+    }
+
+    public async Task<bool> AnyAsync(ISpecification<Reservation> spec, CancellationToken cancellationToken = default)
+    {
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Reservations.AsQueryable(), spec);
+        return await query.AnyAsync(cancellationToken);
     }
 
     public async Task AddAsync(Reservation entity, CancellationToken cancellationToken = default)
@@ -52,11 +61,5 @@ public class ReservationRepository : IRepository<Reservation>
     public void Delete(Reservation entity)
     {
         _context.Reservations.Remove(entity);
-    }
-
-    private IQueryable<Reservation> ApplySpecification(ISpecification<Reservation> spec)
-    {
-        var evaluator = new SpecificationEvaluator<Reservation>();
-        return evaluator.GetQuery(_context.Reservations.AsQueryable(), spec);
     }
 }

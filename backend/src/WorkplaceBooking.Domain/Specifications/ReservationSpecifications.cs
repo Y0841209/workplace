@@ -51,6 +51,16 @@ public class ActiveReservationForResourceSpec : Specification<Reservation>
     }
 }
 
+public class ActiveReservationForUserSpec : Specification<Reservation>
+{
+    public ActiveReservationForUserSpec(Guid userId, DateOnly date)
+    {
+        Query.Where(r => r.UserId == userId
+            && r.ReservationDate == date
+            && r.Status == ReservationStatus.CONFIRMED);
+    }
+}
+
 public class ReservationByIdSpec : Specification<Reservation>
 {
     public ReservationByIdSpec(Guid reservationId)

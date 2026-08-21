@@ -1,6 +1,7 @@
 using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
+using WorkplaceBooking.Domain.Specifications;
 using Ardalis.Result;
 
 namespace WorkplaceBooking.Infrastructure.Services;
@@ -33,9 +34,8 @@ public class QrValidationService : IQrValidationService
 
         // Check for active reservation for this user today
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var spec = new ActiveReservationForResourceSpec(userId, cancellationToken);
         var reservation = await _reservationRepository.FirstOrDefaultAsync(
-            new ActiveReservationForUserSpec(userId, DateOnly.FromDateTime(DateTime.Today)), cancellationToken);
+            new ActiveReservationForUserSpec(userId, today), cancellationToken);
 
         if (reservation == null)
             return Result.Error("No active reservation found for today");

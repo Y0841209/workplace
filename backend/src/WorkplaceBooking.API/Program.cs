@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -7,9 +8,12 @@ using Scalar.AspNetCore;
 using Serilog;
 using System.Text;
 using System.Threading.RateLimiting;
+using Asp.Versioning;
+using HealthChecks.UI.Client;
 using WorkplaceBooking.Api.Authentication;
+using WorkplaceBooking.Api.Extensions;
+using WorkplaceBooking.Application;
 using WorkplaceBooking.Infrastructure;
-using WorkplaceBooking.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -103,16 +107,16 @@ builder.Services.AddHealthChecks()
     .AddUrlGroup(new Uri("https://login.microsoftonline.com/"), name: "entra-id")
     .AddCheck<DiskSpaceHealthCheck>("disk-space");
 
-builder.Services.AddHealthChecksUI()
-    .AddInMemoryStorage();
+// builder.Services.AddHealthChecksUI()
+//     .AddInMemoryStorage();
 
 // API Versioning
 builder.Services.AddApiVersioning(options =>
 {
-    options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
+    options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
-    options.ApiVersionReader = new Microsoft.AspNetCore.Mvc.Versioning.UrlSegmentApiVersionReader();
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
 })
 .AddApiExplorer(options =>
 {
@@ -179,7 +183,7 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowCredentials();
     });
-}
+});
 
 // Controllers
 builder.Services.AddControllers()
@@ -223,22 +227,22 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+app.MapHealthChecks("/health", new HealthCheckOptions
 {
-    ResponseWriter = Microsoft.AspNetCore.Diagnostics.HealthChecks.UIResponseWriter.WriteHealthCheckUIResponse
+    // ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false
 });
 
-app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready")
 });
 
-app.MapHealthChecksUI();
+// app.MapHealthChecksUI();
 
 app.Run();
 

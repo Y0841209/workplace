@@ -35,7 +35,10 @@ public class UserBusinessProfileConfiguration : IEntityTypeConfiguration<UserBus
             .HasForeignKey(x => x.AssignedByUserId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasCheckConstraint("ck_profile_dates", "expires_at IS NULL OR expires_at >= valid_from");
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_profile_dates", "expires_at IS NULL OR expires_at >= valid_from");
+        });
 
         builder.HasIndex(x => new { x.UserId, x.ProfileCode })
             .IsUnique()

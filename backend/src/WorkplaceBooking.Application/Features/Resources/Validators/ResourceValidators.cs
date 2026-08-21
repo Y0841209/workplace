@@ -1,5 +1,6 @@
 using FluentValidation;
 using WorkplaceBooking.Application.Features.Resources.Commands;
+using WorkplaceBooking.Application.Validators;
 
 namespace WorkplaceBooking.Application.Features.Resources.Validators;
 

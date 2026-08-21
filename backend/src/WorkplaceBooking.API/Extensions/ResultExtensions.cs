@@ -14,26 +14,27 @@ public static class ResultExtensions
         {
             ResultStatus.Invalid => new BadRequestObjectResult(new ValidationProblemDetails
             {
-                Errors = result.ValidationErrors.ToDictionary(
-                    e => e.Identifier,
-                    e => new[] { e.ErrorMessage })
+                Errors = result.ValidationErrors
+                    .Where(e => e.Identifier != null)
+                    .Select(e => new KeyValuePair<string, string[]>(e.Identifier!, new[] { e.ErrorMessage }))
+                    .ToDictionary(kv => kv.Key, kv => kv.Value)
             }),
             ResultStatus.NotFound => new NotFoundObjectResult(new ProblemDetails
             {
                 Title = "Not Found",
-                Detail = result.Errors.FirstOrDefault()?.Message ?? "Resource not found"
+                Detail = result.Errors.FirstOrDefault() ?? "Resource not found"
             }),
             ResultStatus.Conflict => new ConflictObjectResult(new ProblemDetails
             {
                 Title = "Conflict",
-                Detail = result.Errors.FirstOrDefault()?.Message ?? "Conflict occurred"
+                Detail = result.Errors.FirstOrDefault() ?? "Conflict occurred"
             }),
             ResultStatus.Forbidden => new ForbidResult(),
             ResultStatus.Unauthorized => new UnauthorizedResult(),
             ResultStatus.Error => new ObjectResult(new ProblemDetails
             {
                 Title = "Error",
-                Detail = result.Errors.FirstOrDefault()?.Message ?? "An error occurred"
+                Detail = result.Errors.FirstOrDefault() ?? "An error occurred"
             })
             {
                 StatusCode = StatusCodes.Status500InternalServerError
@@ -58,26 +59,27 @@ public static class ResultExtensions
         {
             ResultStatus.Invalid => new BadRequestObjectResult(new ValidationProblemDetails
             {
-                Errors = result.ValidationErrors.ToDictionary(
-                    e => e.Identifier,
-                    e => new[] { e.ErrorMessage })
+                Errors = result.ValidationErrors
+                    .Where(e => e.Identifier != null)
+                    .Select(e => new KeyValuePair<string, string[]>(e.Identifier!, new[] { e.ErrorMessage }))
+                    .ToDictionary(kv => kv.Key, kv => kv.Value)
             }),
             ResultStatus.NotFound => new NotFoundObjectResult(new ProblemDetails
             {
                 Title = "Not Found",
-                Detail = result.Errors.FirstOrDefault()?.Message ?? "Resource not found"
+                Detail = result.Errors.FirstOrDefault() ?? "Resource not found"
             }),
             ResultStatus.Conflict => new ConflictObjectResult(new ProblemDetails
             {
                 Title = "Conflict",
-                Detail = result.Errors.FirstOrDefault()?.Message ?? "Conflict occurred"
+                Detail = result.Errors.FirstOrDefault() ?? "Conflict occurred"
             }),
             ResultStatus.Forbidden => new ForbidResult(),
             ResultStatus.Unauthorized => new UnauthorizedResult(),
             ResultStatus.Error => new ObjectResult(new ProblemDetails
             {
                 Title = "Error",
-                Detail = result.Errors.FirstOrDefault()?.Message ?? "An error occurred"
+                Detail = result.Errors.FirstOrDefault() ?? "An error occurred"
             })
             {
                 StatusCode = StatusCodes.Status500InternalServerError

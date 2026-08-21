@@ -1,4 +1,8 @@
-namespace WorkplaceBooking.Application.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace WorkplaceBooking.Application.Common.Interfaces;
 
 public interface ICurrentUserService
 {

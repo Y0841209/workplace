@@ -35,7 +35,10 @@ public class UserApplicationRoleConfiguration : IEntityTypeConfiguration<UserApp
             .HasForeignKey(x => x.AssignedByUserId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasCheckConstraint("ck_role_dates", "expires_at IS NULL OR expires_at >= valid_from");
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_role_dates", "expires_at IS NULL OR expires_at >= valid_from");
+        });
 
         builder.HasIndex(x => new { x.UserId, x.RoleCode })
             .IsUnique()

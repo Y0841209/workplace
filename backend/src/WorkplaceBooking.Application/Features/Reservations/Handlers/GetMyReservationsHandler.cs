@@ -1,5 +1,6 @@
 using Ardalis.Result;
 using MediatR;
+using WorkplaceBooking.Application.Common.Extensions;
 using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.Reservations.DTOs;
 using WorkplaceBooking.Application.Features.Reservations.Queries;
@@ -9,7 +10,7 @@ using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.Reservations.Handlers;
 
-public class GetMyReservationsHandler : IRequestHandler<GetMyReservationsQuery, Result<PagedResult<ReservationDto>>>
+public class GetMyReservationsHandler : IRequestHandler<GetMyReservationsQuery, Ardalis.Result.Result<WorkplaceBooking.Application.Common.DTOs.PagedResult<ReservationDto>>>
 {
     private readonly IRepository<Reservation> _reservationRepository;
     private readonly IRepository<Resource> _resourceRepository;
@@ -28,7 +29,7 @@ public class GetMyReservationsHandler : IRequestHandler<GetMyReservationsQuery, 
         _currentUser = currentUser;
     }
 
-    public async Task<Result<PagedResult<ReservationDto>>> Handle(GetMyReservationsQuery request, CancellationToken cancellationToken)
+    public async Task<Ardalis.Result.Result<WorkplaceBooking.Application.Common.DTOs.PagedResult<ReservationDto>>> Handle(GetMyReservationsQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException("User not authenticated");
 
@@ -71,6 +72,6 @@ public class GetMyReservationsHandler : IRequestHandler<GetMyReservationsQuery, 
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
         var pagedItems = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-        return Result.Success(new PagedResult<ReservationDto>(pagedItems, totalCount, page, request.PageSize));
+        return Ardalis.Result.Result.Success(new WorkplaceBooking.Application.Common.DTOs.PagedResult<ReservationDto>(pagedItems, totalCount, page, request.PageSize));
     }
 }

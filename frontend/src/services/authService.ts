@@ -1,7 +1,9 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import { mockAuthService, mockUser } from './mockAuthService';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const USE_MOCK_AUTH = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
 
 interface JWTPayload {
   sub: string;
@@ -40,7 +42,15 @@ class AuthService {
   private tokenRefreshPromise: Promise<boolean> | null = null;
 
   constructor() {
-    this.loadFromStorage();
+    // In development mode with mock auth, initialize with mock user
+    if (USE_MOCK_AUTH) {
+      this.user = mockUser;
+      this.accessToken = 'dev-token-' + Date.now();
+      this.refreshToken = 'dev-refresh-token';
+      this.saveToStorage();
+    } else {
+      this.loadFromStorage();
+    }
   }
 
   private loadFromStorage() {
@@ -55,12 +65,11 @@ class AuthService {
         } else if (refreshToken) {
           this.refreshToken = refreshToken;
         }
+      } catch (error) {
+        console.error('Failed to load auth from storage:', error);
+        this.clearStorage();
       }
-    } catch (error) {
-      console.error('Failed to load auth from storage:', error);
-      this.clearStorage();
     }
-  }
 
   private saveToStorage() {
     if (this.accessToken && this.refreshToken && this.user) {
@@ -79,7 +88,7 @@ class AuthService {
     localStorage.removeItem('booking_auth');
   }
 
-  isTokenValid(token?: string): boolean {
+  private isTokenValid(token?: string): boolean {
     const t = token || this.accessToken;
     if (!t) return false;
     try {
@@ -103,11 +112,27 @@ class AuthService {
   }
 
   async login(redirectUrl: string): Promise<void> {
+    if (USE_MOCK_AUTH) {
+      const user = await mockAuthService.login();
+      this.user = user;
+      this.accessToken = 'dev-token-' + Date.now();
+      this.refreshToken = 'dev-refresh-token';
+      this.saveToStorage();
+      return;
+    }
     const authUrl = `${API_BASE_URL.replace('/api/v1', '')}/auth/login?redirect=${encodeURIComponent(redirectUrl)}`;
     window.location.href = authUrl;
   }
 
   async handleCallback(code: string, state: string): Promise<LoginResponse> {
+    if (USE_MOCK_AUTH) {
+      const user = await mockAuthService.login();
+      return {
+        accessToken: 'dev-token-' + Date.now(),
+        refreshToken: 'dev-refresh-token',
+        user
+      };
+    }
     const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/callback`, { code, state });
     const { accessToken, refreshToken, user } = response.data;
     
@@ -120,6 +145,11 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
+    if (USE_MOCK_AUTH) {
+      await mockAuthService.logout();
+      this.clearStorage();
+      return;
+    }
     try {
       if (this.refreshToken) {
         await axios.post(`${API_BASE_URL}/auth/logout`, { refreshToken: this.refreshToken });
@@ -132,6 +162,9 @@ class AuthService {
   }
 
   async refreshToken(): Promise<boolean> {
+    if (USE_MOCK_AUTH) {
+      return mockAuthService.refreshToken();
+    }
     if (this.tokenRefreshPromise) return this.tokenRefreshPromise;
     
     if (!this.refreshToken) return false;
@@ -161,6 +194,9 @@ class AuthService {
   }
 
   async getCurrentUser(): Promise<User> {
+    if (USE_MOCK_AUTH) {
+      return mockAuthService.getCurrentUser();
+    }
     const response = await this.createAuthorizedClient().get<User>(`${API_BASE_URL}/auth/me`);
     this.user = response.data;
     this.saveToStorage();
@@ -217,6 +253,7 @@ class AuthService {
 
 export const authService = new AuthService();
 
+// Helper for creating authorized axios instances in other services
 export function createApiClient(): AxiosInstance {
   return authService.createAuthorizedClient();
 }

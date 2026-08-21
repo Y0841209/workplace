@@ -1,6 +1,5 @@
 using Ardalis.Result;
 using MediatR;
-using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.Resources.DTOs;
 using WorkplaceBooking.Application.Features.Resources.Queries;
 using WorkplaceBooking.Domain.Entities;
@@ -9,7 +8,7 @@ using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.Resources.Handlers;
 
-public class GetAvailabilityHandler : IRequestHandler<GetAvailabilityQuery, Result<IReadOnlyList<AvailabilitySlotDto>>>
+public class GetAvailabilityHandler : IRequestHandler<GetAvailabilityQuery, Ardalis.Result.Result<IReadOnlyList<AvailabilitySlotDto>>>
 {
     private readonly IAvailabilityService _availabilityService;
     private readonly IRepository<Resource> _resourceRepository;
@@ -22,7 +21,7 @@ public class GetAvailabilityHandler : IRequestHandler<GetAvailabilityQuery, Resu
         _resourceRepository = resourceRepository;
     }
 
-    public async Task<Result<IReadOnlyList<AvailabilitySlotDto>>> Handle(GetAvailabilityQuery request, CancellationToken cancellationToken)
+    public async Task<Ardalis.Result.Result<IReadOnlyList<AvailabilitySlotDto>>> Handle(GetAvailabilityQuery request, CancellationToken cancellationToken)
     {
         var spec = new AvailableResourcesSpec(
             request.Date,
@@ -68,7 +67,7 @@ public class GetAvailabilityHandler : IRequestHandler<GetAvailabilityQuery, Resu
             }
         }
 
-        return Result.Success(slots);
+        return Ardalis.Result.Result.Success<IReadOnlyList<AvailabilitySlotDto>>(slots);
     }
 
     private async Task<string> GetFloorName(Guid floorId, CancellationToken ct)

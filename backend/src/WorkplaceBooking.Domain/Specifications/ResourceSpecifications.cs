@@ -11,6 +11,14 @@ public class ResourceByCodeSpec : Specification<Resource>
     }
 }
 
+public class ResourceTypeByCodeSpec : Specification<ResourceType>
+{
+    public ResourceTypeByCodeSpec(string code)
+    {
+        Query.Where(rt => rt.Code == code);
+    }
+}
+
 public class ActiveResourceTypesSpec : Specification<ResourceType>
 {
     public ActiveResourceTypesSpec()

@@ -36,7 +36,10 @@ public class ReservationExceptionConfiguration : IEntityTypeConfiguration<Reserv
             .HasForeignKey(x => x.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasCheckConstraint("ck_exception_limit", "maximum_future_active_reservations > 0");
-        builder.HasCheckConstraint("ck_exception_dates", "expires_at >= valid_from");
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_exception_limit", "maximum_future_active_reservations > 0");
+            t.HasCheckConstraint("ck_exception_dates", "expires_at >= valid_from");
+        });
     }
 }

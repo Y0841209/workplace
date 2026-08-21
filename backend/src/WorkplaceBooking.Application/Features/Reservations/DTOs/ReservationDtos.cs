@@ -50,12 +50,3 @@ public record ReservationListQueryDto(
     string? Status = null,
     DateOnly? DateFrom = null,
     DateOnly? DateTo = null);
-
-public record PagedResult<T>(
-    IReadOnlyList<T> Items,
-    int TotalCount,
-    int Page,
-    int PageSize)
-{
-    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
-}

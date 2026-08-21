@@ -1,3 +1,6 @@
+using Ardalis.Result;
+using MediatR;
+using WorkplaceBooking.Application.Common.DTOs;
 using WorkplaceBooking.Domain.Entities;
 
 namespace WorkplaceBooking.Application.Features.Audit.DTOs;
@@ -25,4 +28,4 @@ public record AuditLogQueryDto(
     string? EntityName = null,
     Guid? EntityId = null,
     DateTimeOffset? DateFrom = null,
-    DateTimeOffset? DateTo = null) : IRequest<Result<PagedResult<AuditLogDto>>>;
+    DateTimeOffset? DateTo = null) : IRequest<Ardalis.Result.Result<WorkplaceBooking.Application.Common.DTOs.PagedResult<AuditLogDto>>>;

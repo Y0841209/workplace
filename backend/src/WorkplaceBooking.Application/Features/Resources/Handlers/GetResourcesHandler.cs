@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using AutoMapper;
 using MediatR;
+using WorkplaceBooking.Application.Common.Extensions;
 using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.Resources.DTOs;
 using WorkplaceBooking.Application.Features.Resources.Queries;
@@ -10,7 +11,7 @@ using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.Resources.Handlers;
 
-public class GetResourcesHandler : IRequestHandler<GetResourcesQuery, Result<PagedResult<ResourceDto>>>
+public class GetResourcesHandler : IRequestHandler<GetResourcesQuery, Ardalis.Result.Result<WorkplaceBooking.Application.Common.DTOs.PagedResult<ResourceDto>>>
 {
     private readonly IRepository<Resource> _resourceRepository;
     private readonly IRepository<ResourceType> _resourceTypeRepository;
@@ -26,13 +27,13 @@ public class GetResourcesHandler : IRequestHandler<GetResourcesQuery, Result<Pag
         IRepository<Zone> zoneRepository)
     {
         _resourceRepository = resourceRepository;
-        _resourceTypeRepository = _resourceTypeRepository;
-        _locationRepository = _locationRepository;
-        _floorRepository = _floorRepository;
-        _zoneRepository = _zoneRepository;
+        _resourceTypeRepository = resourceTypeRepository;
+        _locationRepository = locationRepository;
+        _floorRepository = floorRepository;
+        _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<PagedResult<ResourceDto>>> Handle(GetResourcesQuery request, CancellationToken cancellationToken)
+    public async Task<Ardalis.Result.Result<WorkplaceBooking.Application.Common.DTOs.PagedResult<ResourceDto>>> Handle(GetResourcesQuery request, CancellationToken cancellationToken)
     {
         var spec = new ResourcesFilteredSpec(
             request.ResourceTypeCode,
@@ -48,7 +49,7 @@ public class GetResourcesHandler : IRequestHandler<GetResourcesQuery, Result<Pag
         var items = new List<ResourceDto>();
         foreach (var resource in resources)
         {
-            var resourceType = await _resourceTypeRepository.GetByIdAsync(resource.ResourceTypeCode, CancellationToken.None);
+            var resourceType = await _resourceTypeRepository.FirstOrDefaultAsync(new ResourceTypeByCodeSpec(resource.ResourceTypeCode), CancellationToken.None);
             var location = await _locationRepository.GetByIdAsync(resource.LocationId, CancellationToken.None);
             var floor = await _floorRepository.GetByIdAsync(resource.FloorId, CancellationToken.None);
             Zone? zone = null;
@@ -80,6 +81,6 @@ public class GetResourcesHandler : IRequestHandler<GetResourcesQuery, Result<Pag
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
         var pagedItems = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-        return Result.Success(new PagedResult<ResourceDto>(pagedItems, totalCount, page, request.PageSize));
+        return Ardalis.Result.Result.Success(new WorkplaceBooking.Application.Common.DTOs.PagedResult<ResourceDto>(pagedItems, totalCount, page, request.PageSize));
     }
 }

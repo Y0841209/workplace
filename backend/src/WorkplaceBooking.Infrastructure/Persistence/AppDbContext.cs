@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Infrastructure.Persistence.Configurations;
 using WorkplaceBooking.Domain.Interfaces;
+using WorkplaceBooking.SharedKernel.Primitives;
 
 namespace WorkplaceBooking.Infrastructure.Persistence;
 
@@ -75,7 +76,7 @@ public class AppDbContext : DbContext, IUnitOfWork
         }
 
         // Capture domain events
-        var entitiesWithEvents = ChangeTracker.Entries<IAggregateRoot>()
+        var entitiesWithEvents = ChangeTracker.Entries<AggregateRoot>()
             .Where(e => e.Entity.DomainEvents.Any())
             .ToList();
 

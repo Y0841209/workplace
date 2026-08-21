@@ -27,7 +27,7 @@ public class AvailabilityService : IAvailabilityService
         Guid? excludeReservationId = null)
     {
         // First check resource exists and is active/reservable
-        var resource = await _resourceRepository.GetByIdAsync(new ResourceByIdSpec(resourceId), cancellationToken);
+        var resource = await _resourceRepository.GetByIdAsync(resourceId, cancellationToken);
         if (resource == null || !resource.Active || !resource.Reservable)
             return false;
 

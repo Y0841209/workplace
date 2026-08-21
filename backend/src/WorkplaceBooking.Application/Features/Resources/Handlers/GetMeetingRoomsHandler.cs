@@ -1,6 +1,5 @@
 using Ardalis.Result;
 using MediatR;
-using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.Resources.DTOs;
 using WorkplaceBooking.Application.Features.Resources.Queries;
 using WorkplaceBooking.Domain.Entities;
@@ -9,7 +8,7 @@ using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.Resources.Handlers;
 
-public class GetMeetingRoomsHandler : IRequestHandler<GetMeetingRoomsQuery, Result<IReadOnlyList<ResourceDto>>>
+public class GetMeetingRoomsHandler : IRequestHandler<GetMeetingRoomsQuery, Ardalis.Result.Result<IReadOnlyList<ResourceDto>>>
 {
     private readonly IRepository<Resource> _resourceRepository;
     private readonly IRepository<ResourceType> _resourceTypeRepository;
@@ -31,7 +30,7 @@ public class GetMeetingRoomsHandler : IRequestHandler<GetMeetingRoomsQuery, Resu
         _zoneRepository = zoneRepository;
     }
 
-    public async Task<Result<IReadOnlyList<ResourceDto>>> Handle(GetMeetingRoomsQuery request, CancellationToken cancellationToken)
+    public async Task<Ardalis.Result.Result<IReadOnlyList<ResourceDto>>> Handle(GetMeetingRoomsQuery request, CancellationToken cancellationToken)
     {
         var spec = new MeetingRoomsSpec(request.FloorId, request.MinCapacity, request.Active);
         var resources = await _resourceRepository.ListAsync(spec, cancellationToken);
@@ -39,7 +38,7 @@ public class GetMeetingRoomsHandler : IRequestHandler<GetMeetingRoomsQuery, Resu
         var items = new List<ResourceDto>();
         foreach (var resource in resources)
         {
-            var resourceType = await _resourceTypeRepository.GetByIdAsync(resource.ResourceTypeCode, CancellationToken.None);
+            var resourceType = await _resourceTypeRepository.FirstOrDefaultAsync(new ResourceTypeByCodeSpec(resource.ResourceTypeCode), CancellationToken.None);
             var location = await _locationRepository.GetByIdAsync(resource.LocationId, CancellationToken.None);
             var floor = await _floorRepository.GetByIdAsync(resource.FloorId, CancellationToken.None);
             Zone? zone = null;
@@ -67,6 +66,6 @@ public class GetMeetingRoomsHandler : IRequestHandler<GetMeetingRoomsQuery, Resu
                 resource.UpdatedAt));
         }
 
-        return Result.Success<IReadOnlyList<ResourceDto>>(items);
+        return Ardalis.Result.Result.Success<IReadOnlyList<ResourceDto>>(items);
     }
 }

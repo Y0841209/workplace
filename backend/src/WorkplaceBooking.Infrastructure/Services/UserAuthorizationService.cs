@@ -6,7 +6,7 @@ using Ardalis.Result;
 
 namespace WorkplaceBooking.Infrastructure.Services;
 
-public class UserAuthorizationService : IUserAuthorizationService
+public class UserAuthorizationService : WorkplaceBooking.Application.Common.Interfaces.IUserAuthorizationService
 {
     private readonly IRepository<Reservation> _reservationRepository;
     private readonly IRepository<UserApplicationRole> _userRoleRepository;

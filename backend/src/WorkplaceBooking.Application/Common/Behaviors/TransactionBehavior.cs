@@ -1,7 +1,6 @@
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using WorkplaceBooking.Application.Common.Interfaces;
+using WorkplaceBooking.Domain.Interfaces;
 
 namespace WorkplaceBooking.Application.Common.Behaviors;
 
@@ -25,17 +24,24 @@ public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
         {
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            _logger.LogError(ex, "Concurrency error while saving changes");
-            throw new InvalidOperationException("The record was modified by another user. Please refresh and try again.", ex);
-        }
-        catch (DbUpdateException ex)
+        catch (Exception ex) when (IsConcurrencyException(ex) || IsDatabaseUpdateException(ex))
         {
             _logger.LogError(ex, "Database error while saving changes");
             throw new InvalidOperationException("An error occurred while saving the data. Please try again.", ex);
         }
 
         return response;
+    }
+
+    private static bool IsConcurrencyException(Exception ex)
+    {
+        return ex.GetType().Name.Contains("DbUpdateConcurrencyException") ||
+               (ex.InnerException != null && IsConcurrencyException(ex.InnerException));
+    }
+
+    private static bool IsDatabaseUpdateException(Exception ex)
+    {
+        return ex.GetType().Name.Contains("DbUpdateException") ||
+               (ex.InnerException != null && IsDatabaseUpdateException(ex.InnerException));
     }
 }

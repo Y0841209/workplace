@@ -1,5 +1,6 @@
 using Ardalis.Result;
 using MediatR;
+using WorkplaceBooking.Application.Features.CheckIns.DTOs;
 using WorkplaceBooking.Application.Features.Reservations.DTOs;
 
 namespace WorkplaceBooking.Application.Features.Reservations.Commands;
@@ -11,7 +12,7 @@ public record CreateReservationCommand(
     TimeOnly EndTime,
     string? Title = null,
     string? Description = null,
-    int? AttendeeCount = null) : IRequest<Result<ReservationDto>>;
+    int? AttendeeCount = null) : IRequest<Ardalis.Result.Result<ReservationDto>>;
 
 public record UpdateReservationCommand(
     Guid ReservationId,
@@ -21,8 +22,15 @@ public record UpdateReservationCommand(
     string? Title = null,
     string? Description = null,
     int? AttendeeCount = null,
-    string? SupportChangeReason = null) : IRequest<Result<ReservationDto>>;
+    string? SupportChangeReason = null) : IRequest<Ardalis.Result.Result<ReservationDto>>;
 
 public record CancelReservationCommand(
     Guid ReservationId,
-    string? Reason = null) : IRequest<Result>;
+    string? Reason = null) : IRequest<Ardalis.Result.Result>;
+
+public record CheckInReservationCommand(
+    Guid ReservationId,
+    Guid ScannedPublicQrId) : IRequest<Ardalis.Result.Result<CheckInDto>>;
+
+public record CheckOutReservationCommand(
+    Guid ReservationId) : IRequest<Ardalis.Result.Result>;

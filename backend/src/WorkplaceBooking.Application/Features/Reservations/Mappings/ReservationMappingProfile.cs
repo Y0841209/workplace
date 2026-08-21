@@ -1,5 +1,7 @@
 using AutoMapper;
+using WorkplaceBooking.Application.Features.CheckIns.DTOs;
 using WorkplaceBooking.Application.Features.Reservations.DTOs;
+using WorkplaceBooking.Application.Features.Resources.DTOs;
 using WorkplaceBooking.Domain.Entities;
 
 namespace WorkplaceBooking.Application.Features.Reservations.Mappings;
@@ -17,6 +19,6 @@ public class ReservationMappingProfile : Profile
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
         CreateMap<CheckIn, CheckInDto>();
-        CreateMap<AvailabilitySlot, AvailabilitySlotDto>();
+        CreateMap<WorkplaceBooking.Application.Features.Resources.DTOs.AvailabilitySlotDto, AvailabilitySlotDto>();
     }
 }

@@ -1,10 +1,13 @@
-using Ardalis.Result;
+using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkplaceBooking.Api.Extensions;
+using WorkplaceBooking.Application.Common.DTOs;
 using WorkplaceBooking.Application.Features.Resources.Commands;
 using WorkplaceBooking.Application.Features.Resources.Queries;
 using WorkplaceBooking.Application.Features.Resources.DTOs;
+using ArdalisResult = Ardalis.Result;
 
 namespace WorkplaceBooking.Api.Controllers;
 
@@ -54,7 +57,7 @@ public class ResourcesController : ControllerBase
     {
         var query = new GetResourcesQuery(page, pageSize, resourceTypeCode, floorId, zoneId, active, reservable, search);
         var result = await _mediator.Send(query, ct);
-        return result.ToActionResult();
+        return result.ToActionResult<PagedResult<ResourceDto>>();
     }
 
     /// <summary>

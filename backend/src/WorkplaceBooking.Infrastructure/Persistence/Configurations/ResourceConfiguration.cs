@@ -25,12 +25,13 @@ public class ResourceConfiguration : IEntityTypeConfiguration<Resource>
         builder.Property(x => x.UpdatedAt).IsRequired();
 
         // QR Policy Check Constraint
-        builder.HasCheckConstraint("ck_resource_qr_policy",
-            "(resource_type_code IN ('OPEN_WORKSPACE','CLOSED_OFFICE') AND public_qr_id IS NOT NULL) " +
-            "OR (resource_type_code = 'MEETING_ROOM' AND public_qr_id IS NULL)");
-
-        // Capacity check constraint
-        builder.HasCheckConstraint("ck_resource_capacity", "capacity > 0");
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_resource_qr_policy",
+                "(resource_type_code IN ('OPEN_WORKSPACE','CLOSED_OFFICE') AND public_qr_id IS NOT NULL) " +
+                "OR (resource_type_code = 'MEETING_ROOM' AND public_qr_id IS NULL)");
+            t.HasCheckConstraint("ck_resource_capacity", "capacity > 0");
+        });
 
         builder.HasOne(x => x.ResourceType)
             .WithMany()

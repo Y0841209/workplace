@@ -1,7 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.JsonWebTokens;
-using WorkplaceBooking.Application.Interfaces;
+using System.Linq;
+using WorkplaceBooking.Application.Common.Interfaces;
 
 namespace WorkplaceBooking.Infrastructure.Services;
 

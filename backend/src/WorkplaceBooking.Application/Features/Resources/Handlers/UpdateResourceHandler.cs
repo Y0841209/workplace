@@ -1,15 +1,15 @@
 using Ardalis.Result;
 using AutoMapper;
 using MediatR;
-using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.Resources.Commands;
 using WorkplaceBooking.Application.Features.Resources.DTOs;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
+using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.Resources.Handlers;
 
-public class UpdateResourceHandler : IRequestHandler<UpdateResourceCommand, Result<ResourceDto>>
+public class UpdateResourceHandler : IRequestHandler<UpdateResourceCommand, Ardalis.Result.Result<ResourceDto>>
 {
     private readonly IRepository<Resource> _resourceRepository;
     private readonly IRepository<ResourceType> _resourceTypeRepository;
@@ -37,19 +37,19 @@ public class UpdateResourceHandler : IRequestHandler<UpdateResourceCommand, Resu
         _mapper = mapper;
     }
 
-    public async Task<Result<ResourceDto>> Handle(UpdateResourceCommand request, CancellationToken cancellationToken)
+    public async Task<Ardalis.Result.Result<ResourceDto>> Handle(UpdateResourceCommand request, CancellationToken cancellationToken)
     {
         var resource = await _resourceRepository.GetByIdAsync(request.ResourceId, cancellationToken);
         if (resource == null)
-            return Result.NotFound("Resource not found");
+            return Ardalis.Result.Result.NotFound("Resource not found");
 
         // Validate resource type if changing
         ResourceType? resourceType = null;
         if (request.ResourceTypeCode != null && request.ResourceTypeCode != resource.ResourceTypeCode)
         {
-            var rt = await _resourceTypeRepository.GetByIdAsync(request.ResourceTypeCode, cancellationToken);
+            var rt = await _resourceTypeRepository.FirstOrDefaultAsync(new ResourceTypeByCodeSpec(request.ResourceTypeCode), cancellationToken);
             if (rt == null || !rt.Active)
-                return Result.NotFound("Resource type not found or inactive");
+                return Ardalis.Result.Result.NotFound("Resource type not found or inactive");
             resourceType = rt;
         }
 
@@ -59,7 +59,7 @@ public class UpdateResourceHandler : IRequestHandler<UpdateResourceCommand, Resu
         {
             var loc = await _locationRepository.GetByIdAsync(request.LocationId.Value, cancellationToken);
             if (loc == null || !loc.Active)
-                return Result.NotFound("Location not found or inactive");
+                return Ardalis.Result.Result.NotFound("Location not found or inactive");
             location = loc;
         }
 
@@ -69,7 +69,7 @@ public class UpdateResourceHandler : IRequestHandler<UpdateResourceCommand, Resu
         {
             var fl = await _floorRepository.GetByIdAsync(request.FloorId.Value, cancellationToken);
             if (fl == null || !fl.Active || fl.LocationId != (request.LocationId ?? resource.LocationId))
-                return Result.NotFound("Floor not found or doesn't belong to location");
+                return Ardalis.Result.Result.NotFound("Floor not found or doesn't belong to location");
             floor = fl;
         }
 
@@ -79,7 +79,7 @@ public class UpdateResourceHandler : IRequestHandler<UpdateResourceCommand, Resu
         {
             var zn = await _zoneRepository.GetByIdAsync(request.ZoneId.Value, cancellationToken);
             if (zn == null || !zn.Active || zn.FloorId != (request.FloorId ?? resource.FloorId))
-                return Result.NotFound("Zone not found or doesn't belong to floor");
+                return Ardalis.Result.Result.NotFound("Zone not found or doesn't belong to floor");
             zone = zn;
         }
 
@@ -91,13 +91,13 @@ public class UpdateResourceHandler : IRequestHandler<UpdateResourceCommand, Resu
         var forbidsQr = newTypeCode == "MEETING_ROOM";
 
         if (requiresQr && newPublicQrId == null)
-            return Result.Invalid(new[] { new Error("RESOURCE_QR_REQUIRED", "QR code is required for this resource type") });
+            return Ardalis.Result.Result.Invalid(new[] { new ValidationError("RESOURCE_QR_REQUIRED", "QR code is required for this resource type", "RESOURCE_QR_REQUIRED", ValidationSeverity.Error) });
 
         if (forbidsQr && newPublicQrId.HasValue)
-            return Result.Invalid(new[] { new Error("RESOURCE_QR_FORBIDDEN", "QR code is not allowed for meeting rooms") });
+            return Ardalis.Result.Result.Invalid(new[] { new ValidationError("RESOURCE_QR_FORBIDDEN", "QR code is not allowed for meeting rooms", "RESOURCE_QR_FORBIDDEN", ValidationSeverity.Error) });
 
         // Apply updates
-        var updateResult = resource.Update(
+        resource.Update(
             request.Name,
             request.ResourceTypeCode,
             request.LocationId,
@@ -108,18 +108,15 @@ public class UpdateResourceHandler : IRequestHandler<UpdateResourceCommand, Resu
             request.Active,
             request.Reservable);
 
-        if (!updateResult.IsSuccess)
-            return Result.Error(updateResult.Errors.First().Message);
-
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Return updated DTO
-        var finalType = resourceType ?? await _resourceTypeRepository.GetByIdAsync(resource.ResourceTypeCode, CancellationToken.None);
+        var finalType = resourceType ?? await _resourceTypeRepository.FirstOrDefaultAsync(new ResourceTypeByCodeSpec(resource.ResourceTypeCode), CancellationToken.None);
         var finalLocation = location ?? await _locationRepository.GetByIdAsync(resource.LocationId, CancellationToken.None);
         var finalFloor = floor ?? await _floorRepository.GetByIdAsync(resource.FloorId, CancellationToken.None);
         var finalZone = zone ?? (resource.ZoneId.HasValue ? await _zoneRepository.GetByIdAsync(resource.ZoneId.Value, CancellationToken.None) : null);
 
-        return Result.Success(new ResourceDto(
+        return Ardalis.Result.Result.Success(new ResourceDto(
             resource.Id,
             resource.Code,
             resource.Name,

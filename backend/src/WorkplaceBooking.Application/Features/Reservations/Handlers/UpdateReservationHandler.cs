@@ -5,12 +5,11 @@ using WorkplaceBooking.Application.Features.Reservations.Commands;
 using WorkplaceBooking.Application.Features.Reservations.DTOs;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
-using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.Reservations.Handlers;
 
-public class UpdateReservationHandler : IRequestHandler<UpdateReservationCommand, Result<ReservationDto>>
+public class UpdateReservationHandler : IRequestHandler<UpdateReservationCommand, Ardalis.Result.Result<ReservationDto>>
 {
     private readonly IRepository<Reservation> _reservationRepository;
     private readonly IRepository<Resource> _resourceRepository;
@@ -47,11 +46,11 @@ public class UpdateReservationHandler : IRequestHandler<UpdateReservationCommand
 
         // Support must provide reason
         if (isSupportUser && string.IsNullOrWhiteSpace(request.SupportChangeReason))
-            return Result.Invalid(new[] { new Error("SUPPORT_REASON_REQUIRED", "Support must provide change reason") });
+            return Ardalis.Result.Result.Invalid(new[] { new ValidationError("SUPPORT_REASON_REQUIRED", "Support must provide change reason", "SUPPORT_REASON_REQUIRED", ValidationSeverity.Error) });
 
         // Cannot modify completed/cancelled
         if (reservation.Status is ReservationStatus.COMPLETED or ReservationStatus.CANCELLED or ReservationStatus.NOT_CHECKED_IN)
-            return Result.Error($"Cannot modify reservation with status {reservation.Status}");
+            return Ardalis.Result.Result.Error($"Cannot modify reservation with status {reservation.Status}");
 
         // Validate time changes
         var newDate = request.ReservationDate ?? reservation.ReservationDate;
@@ -59,13 +58,13 @@ public class UpdateReservationHandler : IRequestHandler<UpdateReservationCommand
         var newEnd = request.EndTime ?? reservation.EndTime;
 
         if (newEnd <= newStart)
-            return Result.Invalid(new[] { new Error("TIME_ORDER_INVALID", "End time must be after start time") });
+            return Ardalis.Result.Result.Invalid(new[] { new ValidationError("TIME_ORDER_INVALID", "End time must be after start time", "TIME_ORDER_INVALID", ValidationSeverity.Error) });
 
         if (newEnd - newStart < TimeSpan.FromHours(1))
-            return Result.Invalid(new[] { new Error("MIN_DURATION", "Reservation must be at least 1 hour") });
+            return Ardalis.Result.Result.Invalid(new[] { new ValidationError("MIN_DURATION", "Reservation must be at least 1 hour", "MIN_DURATION", ValidationSeverity.Error) });
 
         if (newEnd > new TimeOnly(23, 59))
-            return Result.Invalid(new[] { new Error("MAX_END_TIME", "Reservation cannot end after 23:59") });
+            return Ardalis.Result.Result.Invalid(new[] { new ValidationError("MAX_END_TIME", "Reservation cannot end after 23:59", "MAX_END_TIME", ValidationSeverity.Error) });
 
         // Check availability for new time slot (excluding current reservation)
         var isAvailable = await _availabilityService.IsAvailableAsync(
@@ -92,7 +91,7 @@ public class UpdateReservationHandler : IRequestHandler<UpdateReservationCommand
             isSupportUser);
 
         if (!modifyResult.IsSuccess)
-            return Result.Error(modifyResult.Errors.First().Message);
+            return Ardalis.Result.Result.Error(modifyResult.Error.Message);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -1,5 +1,5 @@
 using FluentValidation;
-using WorkplaceBooking.Application.UseCases.Commands.Reservations;
+using WorkplaceBooking.Application.Features.Reservations.Commands;
 
 namespace WorkplaceBooking.Application.Validators;
 

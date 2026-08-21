@@ -1,3 +1,6 @@
+using Ardalis.Result;
+using MediatR;
+using WorkplaceBooking.Application.Common.DTOs;
 using WorkplaceBooking.Domain.Entities;
 
 namespace WorkplaceBooking.Application.Features.Notifications.DTOs;
@@ -24,4 +27,4 @@ public record NotificationQueryDto(
     string? Type = null,
     string? Status = null,
     DateTimeOffset? ScheduledFrom = null,
-    DateTimeOffset? ScheduledTo = null) : IRequest<Result<PagedResult<NotificationDto>>>;
+    DateTimeOffset? ScheduledTo = null) : IRequest<Ardalis.Result.Result<WorkplaceBooking.Application.Common.DTOs.PagedResult<NotificationDto>>>;

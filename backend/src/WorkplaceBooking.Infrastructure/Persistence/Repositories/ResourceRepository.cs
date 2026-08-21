@@ -1,3 +1,6 @@
+using Ardalis.Specification;
+using Ardalis.Specification.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
 using WorkplaceBooking.Domain.Specifications;
@@ -25,20 +28,26 @@ public class ResourceRepository : IRepository<Resource>
 
     public async Task<Resource?> FirstOrDefaultAsync(ISpecification<Resource> spec, CancellationToken cancellationToken = default)
     {
-        var query = ApplySpecification(spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Resources.AsQueryable(), spec);
         return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Resource>> ListAsync(ISpecification<Resource> spec, CancellationToken cancellationToken = default)
     {
-        var query = ApplySpecification(spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Resources.AsQueryable(), spec);
         return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<int> CountAsync(ISpecification<Resource> spec, CancellationToken cancellationToken = default)
     {
-        var query = ApplySpecification(spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Resources.AsQueryable(), spec);
         return await query.CountAsync(cancellationToken);
+    }
+
+    public async Task<bool> AnyAsync(ISpecification<Resource> spec, CancellationToken cancellationToken = default)
+    {
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Resources.AsQueryable(), spec);
+        return await query.AnyAsync(cancellationToken);
     }
 
     public async Task AddAsync(Resource entity, CancellationToken cancellationToken = default)
@@ -54,11 +63,5 @@ public class ResourceRepository : IRepository<Resource>
     public void Delete(Resource entity)
     {
         _context.Resources.Remove(entity);
-    }
-
-    private IQueryable<Resource> ApplySpecification(ISpecification<Resource> spec)
-    {
-        var evaluator = new SpecificationEvaluator<Resource>();
-        return evaluator.GetQuery(_context.Resources.AsQueryable(), spec);
     }
 }

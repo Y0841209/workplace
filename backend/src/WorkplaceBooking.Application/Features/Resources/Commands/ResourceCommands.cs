@@ -1,5 +1,6 @@
 using Ardalis.Result;
 using MediatR;
+using WorkplaceBooking.Application.Features.Resources.DTOs;
 
 namespace WorkplaceBooking.Application.Features.Resources.Commands;
 
@@ -11,7 +12,7 @@ public record CreateResourceCommand(
     Guid FloorId,
     Guid? ZoneId,
     int Capacity,
-    Guid? PublicQrId = null) : IRequest<Result<ResourceDto>>;
+    Guid? PublicQrId = null) : IRequest<Ardalis.Result.Result<ResourceDto>>;
 
 public record UpdateResourceCommand(
     Guid ResourceId,
@@ -23,13 +24,23 @@ public record UpdateResourceCommand(
     int? Capacity = null,
     Guid? PublicQrId = null,
     bool? Active = null,
-    bool? Reservable = null) : IRequest<Result<ResourceDto>>;
+    bool? Reservable = null) : IRequest<Ardalis.Result.Result<ResourceDto>>;
 
 public record DeleteResourceCommand(
-    Guid ResourceId) : IRequest<Result>;
+    Guid ResourceId) : IRequest<Ardalis.Result.Result>;
 
 public record RegenerateResourceQrCommand(
-    Guid ResourceId) : IRequest<Result<ResourceDto>>;
+    Guid ResourceId) : IRequest<Ardalis.Result.Result<ResourceDto>>;
 
 public record ImportResourcesCommand(
-    List<CreateResourceDto> Resources) : IRequest<Result<int>>;
+    List<CreateResourceDto> Resources) : IRequest<Ardalis.Result.Result<int>>;
+
+public record CreateResourceDto(
+    string Code,
+    string Name,
+    string ResourceTypeCode,
+    Guid LocationId,
+    Guid FloorId,
+    Guid? ZoneId,
+    int Capacity,
+    Guid? PublicQrId = null);

@@ -1,11 +1,16 @@
-using Microsoft.AspNetCore.Http;
+using Ardalis.Specification;
+using Ardalis.Specification.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WorkplaceBooking.Application.Common.Interfaces;
+using AppIUserAuth = WorkplaceBooking.Application.Common.Interfaces.IUserAuthorizationService;
+using WorkplaceBooking.Domain.Entities;
+using WorkplaceBooking.Domain.Interfaces;
 using WorkplaceBooking.Infrastructure.Persistence;
 using WorkplaceBooking.Infrastructure.Persistence.Repositories;
 using WorkplaceBooking.Infrastructure.Services;
+using WorkplaceBooking.SharedKernel.Primitives;
 
 namespace WorkplaceBooking.Infrastructure;
 
@@ -44,7 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IReservationPolicyService, ReservationPolicyService>();
         services.AddScoped<IAvailabilityService, AvailabilityService>();
         services.AddScoped<IQrValidationService, QrValidationService>();
-        services.AddScoped<IUserAuthorizationService, UserAuthorizationService>();
+        services.AddScoped<AppIUserAuth, UserAuthorizationService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         // Options
@@ -55,7 +60,7 @@ public static class DependencyInjection
 }
 
 // Generic EF Repository
-public class EfRepository<T> : IRepository<T> where T : class
+public class EfRepository<T> : IRepository<T> where T : Entity
 {
     private readonly AppDbContext _context;
 
@@ -71,23 +76,26 @@ public class EfRepository<T> : IRepository<T> where T : class
 
     public async Task<T?> FirstOrDefaultAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
     {
-        var evaluator = new SpecificationEvaluator<T>();
-        var query = evaluator.GetQuery(_context.Set<T>().AsQueryable(), spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Set<T>().AsQueryable(), spec);
         return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
     {
-        var evaluator = new SpecificationEvaluator<T>();
-        var query = evaluator.GetQuery(_context.Set<T>().AsQueryable(), spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Set<T>().AsQueryable(), spec);
         return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<int> CountAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
     {
-        var evaluator = new SpecificationEvaluator<T>();
-        var query = evaluator.GetQuery(_context.Set<T>().AsQueryable(), spec);
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Set<T>().AsQueryable(), spec);
         return await query.CountAsync(cancellationToken);
+    }
+
+    public async Task<bool> AnyAsync(ISpecification<T> spec, CancellationToken cancellationToken = default)
+    {
+        var query = SpecificationEvaluator.Default.GetQuery(_context.Set<T>().AsQueryable(), spec);
+        return await query.AnyAsync(cancellationToken);
     }
 
     public async Task AddAsync(T entity, CancellationToken cancellationToken = default)

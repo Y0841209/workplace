@@ -8,6 +8,8 @@ using WorkplaceBooking.Application.Common.Mappings;
 using WorkplaceBooking.Application.Features.Resources.Mappings;
 using WorkplaceBooking.Application.Features.Reservations.Mappings;
 using WorkplaceBooking.Application.Features.CheckIns.Mappings;
+using WorkplaceBooking.Application.Validators;
+using WorkplaceBooking.Application.Features.Reservations.Validators;
 
 namespace WorkplaceBooking.Application;
 
@@ -29,7 +31,7 @@ public static class DependencyInjection
 
         // FluentValidation
         services.AddValidatorsFromAssemblyContaining<CreateResourceValidator>();
-        services.AddValidatorsFromAssemblyContaining<CreateReservationValidator>();
+        services.AddValidatorsFromAssemblyContaining<WorkplaceBooking.Application.Features.Reservations.Validators.CreateReservationValidator>();
         services.AddValidatorsFromAssemblyContaining<CreateResourceDtoValidator>();
 
         // Pipeline Behaviors

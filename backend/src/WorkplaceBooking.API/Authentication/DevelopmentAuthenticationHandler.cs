@@ -10,16 +10,18 @@ namespace WorkplaceBooking.Api.Authentication;
 public class DevelopmentAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     private readonly IConfiguration _configuration;
+    private readonly TimeProvider _timeProvider;
 
     public DevelopmentAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        ISystemClock clock,
+        TimeProvider timeProvider,
         IConfiguration configuration)
-        : base(options, logger, encoder, clock)
+        : base(options, logger, encoder)
     {
         _configuration = configuration;
+        _timeProvider = timeProvider;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -33,7 +35,7 @@ public class DevelopmentAuthenticationHandler : AuthenticationHandler<Authentica
         var devUserId = _configuration["Authentication:DevelopmentUserId"] ?? "11111111-1111-1111-1111-111111111111";
         var devEmail = _configuration["Authentication:DevelopmentUserEmail"] ?? "dev@local.com";
         var devName = _configuration["Authentication:DevelopmentUserName"] ?? "Developer Local";
-        var devRoles = _configuration.GetSection("Authentication:DevelopmentRoles").Get<List<string>>() ?? new[] { "GLOBAL_ADMIN" };
+        var devRoles = _configuration.GetSection("Authentication:DevelopmentRoles").Get<List<string>>() ?? new List<string> { "GLOBAL_ADMIN" };
         var devProfiles = _configuration.GetSection("Authentication:DevelopmentBusinessProfiles").Get<List<string>>() ?? new List<string> { "GLOBAL_ADMIN" };
 
         var claims = new List<Claim>
@@ -49,7 +51,7 @@ public class DevelopmentAuthenticationHandler : AuthenticationHandler<Authentica
         };
 
         // Add roles
-        var roles = _configuration.GetSection("Authentication:DevelopmentRoles").Get<List<string>>() ?? new[] { "GLOBAL_ADMIN" };
+        var roles = _configuration.GetSection("Authentication:DevelopmentRoles").Get<List<string>>() ?? new List<string> { "GLOBAL_ADMIN" };
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));

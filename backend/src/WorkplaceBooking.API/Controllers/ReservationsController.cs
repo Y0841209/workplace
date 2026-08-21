@@ -1,10 +1,16 @@
-using Ardalis.Result;
+using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkplaceBooking.Api.Extensions;
+using WorkplaceBooking.Application.Common.DTOs;
+using WorkplaceBooking.Application.Features.CheckIns.DTOs;
 using WorkplaceBooking.Application.Features.Reservations.Commands;
 using WorkplaceBooking.Application.Features.Reservations.Queries;
 using WorkplaceBooking.Application.Features.Reservations.DTOs;
+using WorkplaceBooking.Application.Features.Resources.DTOs;
+using WorkplaceBooking.Application.Features.Resources.Queries;
+using ArdalisResult = Ardalis.Result;
 
 namespace WorkplaceBooking.Api.Controllers;
 
@@ -51,7 +57,7 @@ public class ReservationsController : ControllerBase
     {
         var query = new GetMyReservationsQuery(page, pageSize, status, dateFrom, dateTo);
         var result = await _mediator.Send(query, ct);
-        return result.ToActionResult();
+        return result.ToActionResult<PagedResult<ReservationDto>>();
     }
 
     /// <summary>
@@ -161,10 +167,10 @@ public class ReservationsController : ControllerBase
     /// </summary>
     [HttpGet("check-in/{publicQrId:guid}")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AvailabilitySlotDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResourceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AvailabilitySlotDto>> GetResourceForCheckIn(Guid publicQrId, CancellationToken ct)
+    public async Task<ActionResult<ResourceDto>> GetResourceForCheckIn(Guid publicQrId, CancellationToken ct)
     {
         var query = new GetResourceByQrQuery(publicQrId);
         var result = await _mediator.Send(query, ct);

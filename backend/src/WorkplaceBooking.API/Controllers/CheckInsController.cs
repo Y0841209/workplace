@@ -1,9 +1,12 @@
-using Ardalis.Result;
+using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkplaceBooking.Api.Extensions;
+using WorkplaceBooking.Application.Common.DTOs;
 using WorkplaceBooking.Application.Features.CheckIns.Queries;
 using WorkplaceBooking.Application.Features.CheckIns.DTOs;
+using ArdalisResult = Ardalis.Result;
 
 namespace WorkplaceBooking.Api.Controllers;
 
@@ -34,7 +37,7 @@ public class CheckInsController : ControllerBase
     {
         var query = new GetCheckInHistoryQuery(page, pageSize, dateFrom, dateTo);
         var result = await _mediator.Send(query, ct);
-        return result.ToActionResult();
+        return result.ToActionResult<PagedResult<CheckInDto>>();
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using FluentValidation;
+using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.Reservations.Commands;
-using WorkplaceBooking.Application.Interfaces;
+using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
 using WorkplaceBooking.Domain.Specifications;
 
@@ -63,7 +64,7 @@ public class CreateReservationValidator : AbstractValidator<CreateReservationCom
         if (!userId.HasValue) return false;
 
         var maxReservations = await _policyService.GetMaxFutureReservationsAsync(cancellationToken);
-        var hasException = await _policyService.HasActiveExceptionAsync(userId.Value, command.ResourceId, cancellationToken);
+        var hasException = await _policyService.HasActiveExceptionAsync(userId.Value, command.ResourceId.ToString(), cancellationToken);
 
         if (hasException) return true;
 

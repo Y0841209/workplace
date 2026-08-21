@@ -1,5 +1,7 @@
 using Ardalis.Result;
 using MediatR;
+using WorkplaceBooking.Application.Common.DTOs;
+using WorkplaceBooking.Application.Common.Extensions;
 using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.CheckIns.DTOs;
 using WorkplaceBooking.Application.Features.CheckIns.Queries;
@@ -9,7 +11,7 @@ using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.CheckIns.Handlers;
 
-public class GetCheckInHistoryHandler : IRequestHandler<GetCheckInHistoryQuery, Result<PagedResult<CheckInDto>>>
+public class GetCheckInHistoryHandler : IRequestHandler<GetCheckInHistoryQuery, Ardalis.Result.Result<WorkplaceBooking.Application.Common.DTOs.PagedResult<CheckInDto>>>
 {
     private readonly IRepository<CheckIn> _checkInRepository;
     private readonly ICurrentUserService _currentUser;
@@ -22,7 +24,7 @@ public class GetCheckInHistoryHandler : IRequestHandler<GetCheckInHistoryQuery, 
         _currentUser = currentUser;
     }
 
-    public async Task<Result<PagedResult<CheckInDto>>> Handle(GetCheckInHistoryQuery request, CancellationToken cancellationToken)
+    public async Task<Ardalis.Result.Result<WorkplaceBooking.Application.Common.DTOs.PagedResult<CheckInDto>>> Handle(GetCheckInHistoryQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException("User not authenticated");
 
@@ -42,6 +44,6 @@ public class GetCheckInHistoryHandler : IRequestHandler<GetCheckInHistoryQuery, 
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
-        return Result.Success(new PagedResult<CheckInDto>(items, totalCount, page, request.PageSize));
+        return Ardalis.Result.Result.Success(new WorkplaceBooking.Application.Common.DTOs.PagedResult<CheckInDto>(items, totalCount, page, request.PageSize));
     }
 }

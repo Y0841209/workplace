@@ -50,11 +50,14 @@ public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
             .OnDelete(DeleteBehavior.SetNull);
 
         // Check constraints
-        builder.HasCheckConstraint("ck_reservation_time_order", "end_time > start_time");
-        builder.HasCheckConstraint("ck_reservation_min_duration",
-            "(reservation_date + end_time) - (reservation_date + start_time) >= INTERVAL '1 hour'");
-        builder.HasCheckConstraint("ck_reservation_latest_end_time", "end_time <= TIME '23:59'");
-        builder.HasCheckConstraint("ck_attendee_count", "attendee_count IS NULL OR attendee_count > 0");
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_reservation_time_order", "end_time > start_time");
+            t.HasCheckConstraint("ck_reservation_min_duration",
+                "(reservation_date + end_time) - (reservation_date + start_time) >= INTERVAL '1 hour'");
+            t.HasCheckConstraint("ck_reservation_latest_end_time", "end_time <= TIME '23:59'");
+            t.HasCheckConstraint("ck_attendee_count", "attendee_count IS NULL OR attendee_count > 0");
+        });
 
         // Exclusion constraints for preventing double booking (requires btree_gist extension)
         // These are created via raw SQL in migration

@@ -1,7 +1,9 @@
 using Ardalis.Result;
+using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WorkplaceBooking.Api.Extensions;
 using WorkplaceBooking.Application.Features.Users.Commands;
 using WorkplaceBooking.Application.Features.Users.Queries;
 using WorkplaceBooking.Application.Features.Users.DTOs;

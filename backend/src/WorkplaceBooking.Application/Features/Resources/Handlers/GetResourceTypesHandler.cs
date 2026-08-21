@@ -1,6 +1,5 @@
 using Ardalis.Result;
 using MediatR;
-using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.Resources.DTOs;
 using WorkplaceBooking.Application.Features.Resources.Queries;
 using WorkplaceBooking.Domain.Entities;
@@ -9,7 +8,7 @@ using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.Resources.Handlers;
 
-public class GetResourceTypesHandler : IRequestHandler<GetResourceTypesQuery, Result<IReadOnlyList<ResourceTypeDto>>>
+public class GetResourceTypesHandler : IRequestHandler<GetResourceTypesQuery, Ardalis.Result.Result<IReadOnlyList<ResourceTypeDto>>>
 {
     private readonly IRepository<ResourceType> _resourceTypeRepository;
 
@@ -18,7 +17,7 @@ public class GetResourceTypesHandler : IRequestHandler<GetResourceTypesQuery, Re
         _resourceTypeRepository = resourceTypeRepository;
     }
 
-    public async Task<Result<IReadOnlyList<ResourceTypeDto>>> Handle(GetResourceTypesQuery request, CancellationToken cancellationToken)
+    public async Task<Ardalis.Result.Result<IReadOnlyList<ResourceTypeDto>>> Handle(GetResourceTypesQuery request, CancellationToken cancellationToken)
     {
         var resourceTypes = await _resourceTypeRepository.ListAsync(new ActiveResourceTypesSpec(), cancellationToken);
         var items = resourceTypes.Select(rt => new ResourceTypeDto(
@@ -28,6 +27,6 @@ public class GetResourceTypesHandler : IRequestHandler<GetResourceTypesQuery, Re
             rt.CheckinRequired,
             rt.Active)).ToList();
 
-        return Result.Success<IReadOnlyList<ResourceTypeDto>>(items);
+        return Ardalis.Result.Result.Success<IReadOnlyList<ResourceTypeDto>>(items);
     }
 }

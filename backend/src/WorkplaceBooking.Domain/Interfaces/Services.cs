@@ -1,5 +1,5 @@
 using WorkplaceBooking.Domain.Entities;
-using WorkplaceBooking.SharedKernel.Results;
+using Ardalis.Result;
 
 namespace WorkplaceBooking.Domain.Interfaces;
 

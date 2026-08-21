@@ -1,11 +1,46 @@
 using FluentValidation;
-using WorkplaceBooking.Application.UseCases.Commands.Resources;
+using WorkplaceBooking.Application.Features.Resources.Commands;
+using WorkplaceBooking.Application.Features.Resources.DTOs;
 
 namespace WorkplaceBooking.Application.Validators;
 
 public class CreateResourceValidator : AbstractValidator<CreateResourceCommand>
 {
     public CreateResourceValidator()
+    {
+        RuleFor(x => x.Code)
+            .NotEmpty().WithMessage("Code is required")
+            .MaximumLength(50).WithMessage("Code must not exceed 50 characters");
+
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Name is required")
+            .MaximumLength(200).WithMessage("Name must not exceed 200 characters");
+
+        RuleFor(x => x.ResourceTypeCode)
+            .NotEmpty().WithMessage("Resource type is required")
+            .Must(code => new[] { "OPEN_WORKSPACE", "CLOSED_OFFICE", "MEETING_ROOM" }.Contains(code))
+            .WithMessage("Resource type must be OPEN_WORKSPACE, CLOSED_OFFICE, or MEETING_ROOM");
+
+        RuleFor(x => x.LocationId)
+            .NotEmpty().WithMessage("Location is required");
+
+        RuleFor(x => x.FloorId)
+            .NotEmpty().WithMessage("Floor is required");
+
+        RuleFor(x => x.Capacity)
+            .GreaterThan(0).WithMessage("Capacity must be positive");
+
+        When(x => x.PublicQrId.HasValue, () =>
+        {
+            RuleFor(x => x.PublicQrId)
+                .NotEqual(Guid.Empty).WithMessage("Public QR ID cannot be empty");
+        });
+    }
+}
+
+public class CreateResourceDtoValidator : AbstractValidator<CreateResourceDto>
+{
+    public CreateResourceDtoValidator()
     {
         RuleFor(x => x.Code)
             .NotEmpty().WithMessage("Code is required")
@@ -98,6 +133,6 @@ public class ImportResourcesValidator : AbstractValidator<ImportResourcesCommand
             .NotEmpty().WithMessage("At least one resource is required");
 
         RuleForEach(x => x.Resources)
-            .SetValidator(new CreateResourceValidator());
+            .SetValidator(new CreateResourceDtoValidator());
     }
 }

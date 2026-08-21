@@ -5,12 +5,11 @@ using WorkplaceBooking.Application.Features.Reservations.Commands;
 using WorkplaceBooking.Application.Features.Reservations.DTOs;
 using WorkplaceBooking.Domain.Entities;
 using WorkplaceBooking.Domain.Interfaces;
-using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Domain.Specifications;
 
 namespace WorkplaceBooking.Application.Features.Reservations.Handlers;
 
-public class CreateReservationHandler : IRequestHandler<CreateReservationCommand, Result<ReservationDto>>
+public class CreateReservationHandler : IRequestHandler<CreateReservationCommand, Ardalis.Result.Result<ReservationDto>>
 {
     private readonly IRepository<Resource> _resourceRepository;
     private readonly IRepository<Reservation> _reservationRepository;
@@ -78,8 +77,8 @@ public class CreateReservationHandler : IRequestHandler<CreateReservationCommand
         if (request.AttendeeCount.HasValue && resource.ResourceTypeCode == "MEETING_ROOM")
         {
             if (request.AttendeeCount > resource.Capacity)
-                return Result.Invalid(new[] {
-                    new Error("ATTENDEE_COUNT_EXCEEDS_CAPACITY", $"Attendee count ({request.AttendeeCount}) exceeds room capacity ({resource.Capacity})")
+                return Ardalis.Result.Result.Invalid(new[] {
+                    new ValidationError("ATTENDEE_COUNT_EXCEEDS_CAPACITY", $"Attendee count ({request.AttendeeCount}) exceeds room capacity ({resource.Capacity})", "ATTENDEE_COUNT_EXCEEDS_CAPACITY", ValidationSeverity.Error)
                 });
         }
 
@@ -97,13 +96,13 @@ public class CreateReservationHandler : IRequestHandler<CreateReservationCommand
             request.AttendeeCount);
 
         if (!reservationResult.IsSuccess)
-            return Result.Error(reservationResult.Errors.First().Message);
+            return Ardalis.Result.Result.Error(reservationResult.Error.Message);
 
         var reservation = reservationResult.Value;
         await _reservationRepository.AddAsync(reservation, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new ReservationDto(
+        return Ardalis.Result.Result.Success(new ReservationDto(
             reservation.Id,
             reservation.ResourceId,
             resource.Code,

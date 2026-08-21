@@ -1,6 +1,5 @@
 using Ardalis.Result;
 using MediatR;
-using WorkplaceBooking.Application.Common.Interfaces;
 using WorkplaceBooking.Application.Features.Reservations.DTOs;
 using WorkplaceBooking.Application.Features.Reservations.Queries;
 using WorkplaceBooking.Domain.Entities;
