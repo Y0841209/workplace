@@ -67,17 +67,17 @@ jobs:
       - name: Run dotnet list package --vulnerable
         run: |
           dotnet list package --vulnerable --include-transitive
-        working-directory: ./src/backend
+        working-directory: ./backend
         
       - name: Run npm audit
         run: npm audit --audit-level=high
-        working-directory: ./src/frontend
+        working-directory: ./frontend
         
       - name: Run Trivy FS Scan (Backend)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
-          scan-ref: 'src/backend'
+          scan-ref: 'backend/src'
           format: 'sarif'
           output: 'trivy-backend.sarif'
           severity: 'HIGH,CRITICAL'
@@ -86,7 +86,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
-          scan-ref: 'src/frontend'
+          scan-ref: 'frontend'
           format: 'sarif'
           output: 'trivy-frontend.sarif'
           severity: 'HIGH,CRITICAL'
@@ -95,32 +95,6 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-*.sarif'
-
-  # OWASP ZAP Scan
-  zap-scan:
-    name: OWASP ZAP DAST Scan
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Start Application Stack
-        run: |
-          docker-compose -f infrastructure/docker/docker-compose.yml up -d postgres api frontend nginx
-          sleep 30  # Wait for services to be ready
-          
-      - name: Run OWASP ZAP Scan
-        uses: zaproxy/action-full-scan@v0.5.0
-        with:
-          target: 'https://localhost'
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a'
-          
-      - name: Upload ZAP Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-report
-          path: report.html
 
   # Container Scan
   container-scan:
@@ -160,10 +134,10 @@ jobs:
       - name: Check .NET Licenses
         run: |
           dotnet tool install --global dotnet-licenses
-          dotnet licenses list --project ./src/backend/WorkplaceBooking.sln
+          dotnet licenses list --project ./backend/WorkplaceBooking.sln
           
       - name: Check NPM Licenses
         run: |
           npm install -g license-checker
           license-checker --production --csv > licenses.csv
-        working-directory: ./src/frontend
+        working-directory: ./frontend

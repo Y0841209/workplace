@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\WorkplaceBooking.Api\WorkplaceBooking.Api.csproj" />
+    <ProjectReference Include="..\..\src\WorkplaceBooking.API\WorkplaceBooking.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

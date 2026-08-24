@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -9,7 +10,6 @@ using Serilog;
 using System.Text;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
-using HealthChecks.UI.Client;
 using WorkplaceBooking.Api.Authentication;
 using WorkplaceBooking.Api.Extensions;
 using WorkplaceBooking.Application;
@@ -194,6 +194,18 @@ builder.Services.AddControllers()
     });
 
 var app = builder.Build();
+
+// Trust the TLS-terminating proxy (Render edge / nginx / docker-compose).
+// Render terminates HTTPS and forwards plain HTTP with X-Forwarded-For/Proto;
+// without this, UseHttpsRedirection and authentication misbehave behind the proxy.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Accept forwarded headers from any proxy. If this API is ever exposed
+    // directly to the internet, restrict KnownProxies/KnownNetworks instead.
+    KnownNetworks = { },
+    KnownProxies = { }
+});
 
 // Middleware Pipeline
 if (app.Environment.IsDevelopment())

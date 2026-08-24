@@ -11,12 +11,21 @@ out/
 # IDE/Editor
 .vscode/
 .idea/
+.vs/
 *.swp
 *.swo
 *~
 .project
 .classpath
 .settings/
+
+# Local tooling caches (diagnostics, npm cache)
+.dotnet-cli-home/
+.npm-cache/
+
+# Test results
+TestResults/
+*.trx
 
 # OS
 .DS_Store

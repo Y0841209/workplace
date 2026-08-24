@@ -18,7 +18,7 @@
 │                      APPLICATION LAYER                          │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  Use Cases / Application Services / DTOs / Validators   │   │
-│  │  (BookingPlatform.Application)                          │   │
+│  │  (WorkplaceBooking.Application)                         │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -27,7 +27,7 @@
 │                       DOMAIN LAYER                              │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  Entities / Value Objects / Domain Events / Interfaces  │   │
-│  │  (BookingPlatform.Domain)                               │   │
+│  │  (WorkplaceBooking.Domain)                              │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -65,40 +65,28 @@
 ```
 workplace-booking-platform/
 ├── docs/
-│   ├── architecture/
-│   │   ├── ARCHITECTURE.md      # Complete architecture documentation
-│   │   ├── DIAGRAMS.md          # Mermaid diagrams (C4, sequences, ER)
-│   │   ├── TECHNICAL_DECISIONS.md
-│   │   └── DEPENDENCIES.md
-│   └── adr/                     # Architecture Decision Records (18 ADRs)
-├── src/
-│   ├── backend/
-│   │   ├── src/
-│   │   │   ├── BookingPlatform.Domain/       # Domain layer (pure C#)
-│   │   │   ├── BookingPlatform.Application/  # Application layer (CQRS)
-│   │   │   ├── BookingPlatform.Infrastructure/ # Infrastructure (EF Core, Entra ID)
-│   │   │   └── BookingPlatform.Api/          # API layer (Controllers)
-│   │   └── tests/                           # Unit, Integration, API tests
-│   ├── frontend/
-│   │   ├── src/
-│   │   │   ├── components/      # Reusable UI components
-│   │   │   ├── pages/           # Route-level components
-│   │   │   ├── hooks/           # Custom React hooks
-│   │   │   ├── services/        # API clients, auth
-│   │   │   ├── contexts/        # React contexts (Auth, Theme)
-│   │   │   ├── types/           # TypeScript interfaces
-│   │   │   ├── utils/           # Helpers, formatters
-│   │   │   ├── theme/           # MUI theme configuration
-│   │   │   ├── layouts/         # Page layouts
-│   │   │   └── assets/          # Static assets
-│   │   └── tests/               # Unit, E2E tests
-│   └── ...
+│   ├── architecture/          # Architecture documentation
+│   └── adr/                   # Architecture Decision Records
+├── backend/                   # .NET 8 backend (Clean Architecture)
+│   ├── src/
+│   │   ├── WorkplaceBooking.Domain/          # Domain layer (pure C#)
+│   │   ├── WorkplaceBooking.Application/     # Application layer (CQRS/MediatR)
+│   │   ├── WorkplaceBooking.Infrastructure/  # EF Core, repositories, services
+│   │   ├── WorkplaceBooking.SharedKernel/    # Primitives, results, exceptions
+│   │   └── WorkplaceBooking.API/             # API layer (controllers)
+│   ├── tests/                 # xUnit test projects
+│   └── WorkplaceBooking.sln
+├── frontend/                  # React + TypeScript + MUI (scaffold)
+│   ├── src/
+│   └── Dockerfile
+├── database/
+│   └── scripts/               # SQL bootstrap (001 schema -> 009 seed)
 ├── infrastructure/
-│   ├── docker/                  # Docker Compose files
-│   ├── nginx/                   # Nginx configurations
-│   └── database/
-│       └── migrations/          # SQL migrations / EF Core
-└── ...
+│   ├── docker/                # Docker Compose (base + dev override)
+│   ├── nginx/                 # Nginx configs (dev + production TLS)
+│   └── database/              # Seed helpers
+├── .github/workflows/         # CI/CD (GitHub Actions)
+└── render.yaml                # Render Blueprint (deploy para pruebas)
 ```
 
 ## 🚀 Quick Start
@@ -121,28 +109,31 @@ docker-compose -f infrastructure/docker/docker-compose.yml \
                -f infrastructure/docker/docker-compose.override.yml up -d
 
 # Access applications
-# Frontend: http://localhost:3000 (Vite dev server with HMR)
+# Frontend: http://localhost (Nginx reverse proxy)
 # API: http://localhost:8080
-# Swagger: http://localhost:8080/scalar
-# Hangfire: http://localhost:8080/hangfire
-# pgAdmin: http://localhost:5050 (admin@booking.local / admin)
-# SMTP UI: http://localhost:2500
+# Swagger: http://localhost:8080/swagger
+# Scalar: http://localhost:8080/scalar
+# pgAdmin: http://localhost:5050 (admin@booking.local / admin) [dev override]
+# SMTP UI: http://localhost:2500 [dev override]
 ```
 
 ### Local Development (without Docker)
 
 **Backend:**
 ```bash
-cd src/backend
-dotnet restore
-dotnet ef database update --project src/BookingPlatform.Infrastructure --startup-project src/BookingPlatform.Api
-dotnet run --project src/BookingPlatform.Api
+cd backend
+dotnet restore WorkplaceBooking.sln
+# Database: create schema + extensions, then apply scripts in order
+#   psql ... -f database/scripts/001_extensions_schema.sql   (extensions + schema)
+#   psql ... -f database/scripts/003_users_roles_profiles.sql
+#   ... up to 008_seed_data.sql
+dotnet run --project src/WorkplaceBooking.Api
 ```
 
 **Frontend:**
 ```bash
-cd src/frontend
-npm ci
+cd frontend
+npm install
 npm run dev
 ```
 
@@ -179,16 +170,13 @@ See [FRD Document](docs/FRD_Modelo_Datos_Workplace_Booking_OpenCode.docx) for co
 
 ```bash
 # Backend tests
-cd src/backend
-dotnet test --configuration Release --collect:"XPlat Code Coverage"
+cd backend
+dotnet test WorkplaceBooking.sln --configuration Release --collect:"XPlat Code Coverage"
 
-# Frontend tests
-cd src/frontend
-npm run test:unit          # Unit tests (Vitest + RTL)
-npm run test:coverage      # With coverage
-npm run test:e2e           # E2E tests (Playwright)
-npm run lint               # ESLint
-npm run typecheck          # TypeScript check
+# Frontend (scaffold; add tests as pages are implemented)
+cd frontend
+npm run lint          # ESLint
+npm run build         # TypeScript check + Vite build
 ```
 
 ## 📦 CI/CD Pipeline
@@ -226,6 +214,27 @@ GitHub Actions workflow includes:
 - **Metrics**: Prometheus `/metrics` endpoint
 - **Tracing**: OpenTelemetry → Tempo/Jaeger
 - **Health**: `/health`, `/health/live`, `/health/ready`
+
+## 🚀 Deploy en Render (pruebas)
+
+El repo incluye `render.yaml` (Blueprint) que crea **PostgreSQL + API**:
+
+1. Sube el repo a GitHub y en Render: **New → Blueprint → selecciona el repo**.
+2. Llena los secretos marcados `sync: false` (AzureAd / Email) en el dashboard.
+3. Bootstrap de la BD (una sola vez, desde el *Shell* de la base en Render o con `psql`):
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS pgcrypto;
+   CREATE EXTENSION IF NOT EXISTS btree_gist;
+   CREATE EXTENSION IF NOT EXISTS citext;
+   CREATE SCHEMA IF NOT EXISTS booking;
+   ```
+   y luego ejecuta en orden `database/scripts/003_users_roles_profiles.sql` … `008_seed_data.sql`.
+4. Verifica: `GET https://<api>.onrender.com/health/live` → `Healthy`.
+5. CI/CD: agrega los secrets `RENDER_DEPLOY_HOOK_URL` y `RENDER_APP_URL` en GitHub para
+   auto-desplegar en cada push a `main`.
+
+> Nota: en pruebas la API corre con `ASPNETCORE_ENVIRONMENT=Development` (auth local,
+> sin Entra ID). Para producción cambia a `Production` y configura Entra ID real.
 
 ## 📄 License
 

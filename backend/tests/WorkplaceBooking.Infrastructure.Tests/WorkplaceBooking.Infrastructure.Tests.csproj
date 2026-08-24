@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\WorkplaceBooking.Infrastructure\WorkplaceBooking.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\src\WorkplaceBooking.Application\WorkplaceBooking.Application.csproj" />
-    <ProjectReference Include="..\..\..\src\WorkplaceBooking.Domain\WorkplaceBooking.Domain.csproj" />
+    <ProjectReference Include="..\..\src\WorkplaceBooking.Infrastructure\WorkplaceBooking.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\WorkplaceBooking.Application\WorkplaceBooking.Application.csproj" />
+    <ProjectReference Include="..\..\src\WorkplaceBooking.Domain\WorkplaceBooking.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,8 +1,12 @@
 version: '3.8'
 
-# Workplace Booking Platform - Production Docker Compose
+# Workplace Booking Platform - Docker Compose
 # Usage: docker-compose -f infrastructure/docker/docker-compose.yml up -d
-#        docker-compose -f infrastructure/docker/docker-compose.yml -f infrastructure/docker/docker-compose.override.yml up -d (for development)
+#        docker-compose -f infrastructure/docker/docker-compose.yml -f infrastructure/docker/docker-compose.override.yml up -d (development)
+#
+# NOTE: this compose uses the HTTP dev nginx config (nginx.dev.conf) so the stack
+# starts without TLS certificates. Production TLS is handled by nginx.conf +
+# certbot (profile: production) or by the hosting platform's edge (e.g. Render).
 
 services:
   # ==========================================
@@ -19,8 +23,8 @@ services:
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/migrations:/docker-entrypoint-initdb.d:ro
-      - ./database/init-extensions.sql:/docker-entrypoint-initdb.d/00-extensions.sql:ro
+      # SQL scripts bootstrap the schema on first run (001 creates extensions + booking schema)
+      - ../../database/scripts:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -50,25 +54,22 @@ services:
   api:
     build:
       context: ../..
-      dockerfile: src/backend/src/WorkplaceBooking.Api/Dockerfile
+      dockerfile: backend/src/WorkplaceBooking.API/Dockerfile
       target: runtime
     container_name: booking-api
     hostname: api
     environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-booking};Username=${POSTGRES_USER:-booking_user};Password=${POSTGRES_PASSWORD};Include Error Detail=true"
-      ConnectionStrings__Hangfire: "Host=postgres;Database=${POSTGRES_DB:-booking};Username=${POSTGRES_USER:-booking_user};Password=${POSTGRES_PASSWORD}"
-      
+
       # Microsoft Entra ID
       AzureAd__Instance: https://login.microsoftonline.com/
       AzureAd__Domain: ${AZURE_AD_DOMAIN}
       AzureAd__TenantId: ${AZURE_AD_TENANT_ID}
       AzureAd__ClientId: ${AZURE_AD_CLIENT_ID}
       AzureAd__ClientSecret: ${AZURE_AD_CLIENT_SECRET}
-      AzureAd__CallbackPath: /signin-oidc
-      AzureAd__SignedOutCallbackPath: /signout-oidc
-      
+
       # Email (SMTP)
       Email__SmtpHost: ${EMAIL_SMTP_HOST}
       Email__SmtpPort: ${EMAIL_SMTP_PORT:-587}
@@ -77,15 +78,13 @@ services:
       Email__FromAddress: ${EMAIL_FROM_ADDRESS}
       Email__FromName: ${EMAIL_FROM_NAME:-Workplace Booking}
       Email__UseSsl: ${EMAIL_USE_SSL:-true}
-      
+
       # Frontend URL (for CORS, email links)
-      Frontend__BaseUrl: ${FRONTEND_BASE_URL:-https://booking.company.com}
-      
-      # OpenTelemetry
-      Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
-      
-      # Hangfire Dashboard Auth
-      Hangfire__Dashboard__RequireHttps: ${HANGFIRE_DASHBOARD_HTTPS:-true}
+      Frontend__BaseUrl: ${FRONTEND_BASE_URL:-http://localhost}
+
+      # CORS origins
+      AllowedOrigins__0: ${ALLOWED_ORIGINS_0:-http://localhost}
+      AllowedOrigins__1: ${ALLOWED_ORIGINS_1:-http://localhost:3000}
     depends_on:
       postgres:
         condition: service_healthy
@@ -97,57 +96,6 @@ services:
           memory: 1G
         reservations:
           memory: 512M
-    restart: unless-stopped
-    # Health check via nginx (api doesn't expose port directly)
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-
-  # ==========================================
-  # BACKGROUND WORKER (Hangfire)
-  # ==========================================
-  worker:
-    build:
-      context: ../..
-      dockerfile: src/backend/src/WorkplaceBooking.Api/Dockerfile
-      target: runtime
-    container_name: booking-worker
-    hostname: worker
-    command: ["dotnet", "WorkplaceBooking.Api.dll", "--worker"]
-    environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-booking};Username=${POSTGRES_USER:-booking_user};Password=${POSTGRES_PASSWORD}"
-      ConnectionStrings__Hangfire: "Host=postgres;Database=${POSTGRES_DB:-booking};Username=${POSTGRES_USER:-booking_user};Password=${POSTGRES_PASSWORD}"
-      
-      AzureAd__Instance: https://login.microsoftonline.com/
-      AzureAd__Domain: ${AZURE_AD_DOMAIN}
-      AzureAd__TenantId: ${AZURE_AD_TENANT_ID}
-      AzureAd__ClientId: ${AZURE_AD_CLIENT_ID}
-      AzureAd__ClientSecret: ${AZURE_AD_CLIENT_SECRET}
-      
-      Email__SmtpHost: ${EMAIL_SMTP_HOST}
-      Email__SmtpPort: ${EMAIL_SMTP_PORT:-587}
-      Email__SmtpUser: ${EMAIL_SMTP_USER}
-      Email__SmtpPassword: ${EMAIL_SMTP_PASSWORD}
-      Email__FromAddress: ${EMAIL_FROM_ADDRESS}
-      Email__FromName: ${EMAIL_FROM_NAME:-Workplace Booking}
-      Email__UseSsl: ${EMAIL_USE_SSL:-true}
-      
-      Otlp__Endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - booking-internal
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 256M
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -161,7 +109,7 @@ services:
   frontend:
     build:
       context: ../..
-      dockerfile: src/frontend/Dockerfile
+      dockerfile: frontend/Dockerfile
       target: runtime
     container_name: booking-frontend
     hostname: frontend
@@ -185,7 +133,7 @@ services:
         max-file: "3"
 
   # ==========================================
-  # NGINX REVERSE PROXY
+  # NGINX REVERSE PROXY (HTTP dev config; no TLS required)
   # ==========================================
   nginx:
     image: nginx:1.25-alpine
@@ -193,20 +141,13 @@ services:
     hostname: nginx
     ports:
       - "80:80"
-      - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/templates:/etc/nginx/templates:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
-      - ./certbot/www:/var/www/certbot:ro
-      - frontend_static:/usr/share/nginx/html:ro
+      - ../../nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - frontend
       - api
     networks:
       - booking-internal
-      - booking-external
     deploy:
       resources:
         limits:
@@ -221,20 +162,19 @@ services:
         max-file: "5"
 
   # ==========================================
-  # CERTBOT (Let's Encrypt)
+  # CERTBOT (Let's Encrypt) - only for self-hosted production TLS
   # ==========================================
   certbot:
     image: certbot/certbot:v2.10
     container_name: booking-certbot
+    profiles: ["production"]
     volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ../../infrastructure/certbot/conf:/etc/letsencrypt
+      - ../../infrastructure/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet --deploy-hook \"nginx -s reload\"; sleep 12h & wait $${!}; done'"
     networks:
-      - booking-external
+      - booking-internal
     restart: unless-stopped
-    profiles:
-      - production
 
 # ==========================================
 # VOLUMES
@@ -242,15 +182,10 @@ services:
 volumes:
   postgres_data:
     driver: local
-  frontend_static:
-    driver: local
 
 # ==========================================
 # NETWORKS
 # ==========================================
 networks:
   booking-internal:
-    driver: bridge
-    internal: false
-  booking-external:
     driver: bridge

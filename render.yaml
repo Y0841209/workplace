@@ -1,0 +1,70 @@
+# Render Blueprint - https://render.com/docs/blueprint-spec
+# Deploy for TESTING: PostgreSQL + Web API (.NET 8, Docker).
+#
+# How to use:
+#   1. Push this file to GitHub (main).
+#   2. In Render: New -> Blueprint -> select this repository.
+#      (Do NOT fill `repo:` here; Render injects it from the dashboard selection.)
+#   3. Fill the secrets marked with `sync: false` (AzureAd / Email).
+#   4. After the DB is created, run the SQL bootstrap (see README / report):
+#      scripts 001 (extensions + schema), then 003..009 in order.
+#
+# NOTE: the API runs with ASPNETCORE_ENVIRONMENT=Development so the built-in
+# Development auth handler is used (no Entra ID needed for pruebas).
+# Switch to Production + real Entra ID secrets before going live.
+
+services:
+  - type: web
+    name: booking-api
+    runtime: docker
+    plan: free
+    dockerfilePath: backend/src/WorkplaceBooking.API/Dockerfile
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Development
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: booking-db
+          property: connectionString
+      - key: AllowedOrigins__0
+        value: https://booking-api.onrender.com
+      - key: AzureAd__Instance
+        value: https://login.microsoftonline.com/
+      - key: AzureAd__TenantId
+        sync: false
+      - key: AzureAd__ClientId
+        sync: false
+      - key: AzureAd__ClientSecret
+        sync: false
+      - key: Email__SmtpHost
+        sync: false
+      - key: Email__SmtpPort
+        sync: false
+      - key: Email__SmtpUser
+        sync: false
+      - key: Email__SmtpPassword
+        sync: false
+      - key: Email__FromAddress
+        sync: false
+      - key: Email__FromName
+        value: Workplace Booking (Render)
+      - key: Email__UseSsl
+        sync: false
+
+# TODO(frontend): add the SPA as a static site / docker web service once the
+# frontend app compiles (missing pages/layouts):
+#   - type: web
+#     name: booking-frontend
+#     runtime: docker
+#     plan: free
+#     dockerfilePath: frontend/Dockerfile
+#     envVars:
+#       - key: VITE_API_BASE_URL
+#         value: /api/v1
+
+databases:
+  - name: booking-db
+    plan: free
+    databaseName: booking

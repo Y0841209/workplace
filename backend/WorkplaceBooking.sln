@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkplaceBooking.Applicatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkplaceBooking.Infrastructure", "src\WorkplaceBooking.Infrastructure\WorkplaceBooking.Infrastructure.csproj", "{33333333-3333-3333-3333-333333333333}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkplaceBooking.Api", "src\WorkplaceBooking.Api\WorkplaceBooking.Api.csproj", "{44444444-4444-4444-4444-444444444444}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkplaceBooking.Api", "src\WorkplaceBooking.API\WorkplaceBooking.Api.csproj", "{44444444-4444-4444-4444-444444444444}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkplaceBooking.SharedKernel", "src\WorkplaceBooking.SharedKernel\WorkplaceBooking.SharedKernel.csproj", "{55555555-5555-5555-5555-555555555555}"
 EndProject

@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\WorkplaceBooking.Domain\WorkplaceBooking.Domain.csproj" />
-    <ProjectReference Include="..\..\..\src\WorkplaceBooking.SharedKernel\WorkplaceBooking.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\WorkplaceBooking.Domain\WorkplaceBooking.Domain.csproj" />
+    <ProjectReference Include="..\..\src\WorkplaceBooking.SharedKernel\WorkplaceBooking.SharedKernel.csproj" />
   </ItemGroup>
 
   <ItemGroup>
