@@ -15,6 +15,11 @@
     <ProjectReference Include="..\WorkplaceBooking.SharedKernel\WorkplaceBooking.SharedKernel.csproj" />
   </ItemGroup>
 
+  <!-- ASP.NET Core framework (IHttpContextAccessor, Options, DI) + JWT claim types -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Ardalis.Result" Version="10.0.0" />
     <PackageReference Include="Ardalis.Specification" Version="8.0.0" />
@@ -26,6 +31,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.5.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
   </ItemGroup>
 </Project>

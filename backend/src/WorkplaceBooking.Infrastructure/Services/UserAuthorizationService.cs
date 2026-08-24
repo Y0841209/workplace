@@ -42,9 +42,9 @@ public class UserAuthorizationService : WorkplaceBooking.Application.Common.Inte
         return reservation.UserId == userId;
     }
 
-    public async Task<bool> CanCheckInAsync(Guid userId, Guid reservationId, Guid scannedQrId, CancellationToken cancellationToken = default)
+    public Task<bool> CanCheckInAsync(Guid userId, Guid reservationId, Guid scannedQrId, CancellationToken cancellationToken = default)
     {
         // This is validated in the check-in handler with more detailed checks
-        return true;
+        return Task.FromResult(true);
     }
 }

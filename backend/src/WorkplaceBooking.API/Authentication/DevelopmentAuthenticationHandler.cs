@@ -24,12 +24,12 @@ public class DevelopmentAuthenticationHandler : AuthenticationHandler<Authentica
         _timeProvider = timeProvider;
     }
 
-    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         // Only use development authentication when explicitly enabled
         if (!_configuration.GetValue<bool>("Authentication:UseDevelopmentMode"))
         {
-            return AuthenticateResult.NoResult();
+            return Task.FromResult(AuthenticateResult.NoResult());
         }
 
         var devUserId = _configuration["Authentication:DevelopmentUserId"] ?? "11111111-1111-1111-1111-111111111111";
@@ -68,6 +68,6 @@ public class DevelopmentAuthenticationHandler : AuthenticationHandler<Authentica
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, "Development");
 
-        return AuthenticateResult.Success(ticket);
+        return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }

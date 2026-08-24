@@ -70,15 +70,15 @@ public class GetAvailabilityHandler : IRequestHandler<GetAvailabilityQuery, Arda
         return Ardalis.Result.Result.Success<IReadOnlyList<AvailabilitySlotDto>>(slots);
     }
 
-    private async Task<string> GetFloorName(Guid floorId, CancellationToken ct)
+    private Task<string> GetFloorName(Guid floorId, CancellationToken ct)
     {
         // Would need FloorRepository - simplified
-        return "Piso";
+        return Task.FromResult("Piso");
     }
 
-    private async Task<string?> GetZoneName(Guid zoneId, CancellationToken ct)
+    private Task<string?> GetZoneName(Guid zoneId, CancellationToken ct)
     {
         // Would need ZoneRepository - simplified
-        return null;
+        return Task.FromResult<string?>(null);
     }
 }
