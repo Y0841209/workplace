@@ -38,7 +38,7 @@ jobs:
         run: dotnet test backend/WorkplaceBooking.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults
 
       - name: Upload Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           files: ./TestResults/**/coverage.cobertura.xml
           flags: backend
