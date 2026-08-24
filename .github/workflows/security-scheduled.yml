@@ -20,7 +20,7 @@ jobs:
     permissions:
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -39,7 +39,7 @@ jobs:
     permissions:
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -57,7 +57,7 @@ jobs:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -101,7 +101,7 @@ jobs:
     name: Container Image Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Run Trivy on API Image
         uses: aquasecurity/trivy-action@master
@@ -129,7 +129,7 @@ jobs:
     name: License Compliance Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Check .NET Licenses
         run: |
