@@ -221,14 +221,10 @@ El repo incluye `render.yaml` (Blueprint) que crea **PostgreSQL + API**:
 
 1. Sube el repo a GitHub y en Render: **New → Blueprint → selecciona el repo**.
 2. Llena los secretos marcados `sync: false` (AzureAd / Email) en el dashboard.
-3. Bootstrap de la BD (una sola vez, desde el *Shell* de la base en Render o con `psql`):
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS pgcrypto;
-   CREATE EXTENSION IF NOT EXISTS btree_gist;
-   CREATE EXTENSION IF NOT EXISTS citext;
-   CREATE SCHEMA IF NOT EXISTS booking;
-   ```
-   y luego ejecuta en orden `database/scripts/003_users_roles_profiles.sql` … `008_seed_data.sql`.
+3. Bootstrap de la BD (una sola vez): ejecuta `database/bootstrap_full.sql`
+   (script combinado que crea extensiones, esquema `booking`, tablas, seed de 91
+   recursos y el usuario de desarrollo). Alternativa manual: ejecutar
+   `database/scripts/001_...` a `008_seed_data.sql` en orden.
 4. Verifica: `GET https://<api>.onrender.com/health/live` → `Healthy`.
 5. CI/CD: agrega los secrets `RENDER_DEPLOY_HOOK_URL` y `RENDER_APP_URL` en GitHub para
    auto-desplegar en cada push a `main`.
