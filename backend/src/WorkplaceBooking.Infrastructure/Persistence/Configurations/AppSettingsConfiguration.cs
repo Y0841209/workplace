@@ -19,6 +19,10 @@ public class AppSettingsConfiguration : IEntityTypeConfiguration<AppSettings>
         builder.Property(x => x.ShowOccupantNameToUsers).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
-        builder.HasIndex(x => true).IsUnique().HasDatabaseName("ux_app_settings_singleton");
+
+        // NOTA: el índice singleton ux_app_settings_singleton se crea via SQL
+        // (database/scripts/005_reservations.sql -> ON app_settings ((TRUE))).
+        // EF Core no puede representar un índice sobre una constante con
+        // HasIndex(lambda), por eso no se declara aqui.
     }
 }

@@ -104,7 +104,6 @@ builder.Services.AddRateLimiter(options =>
 // Health Checks
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
-    .AddUrlGroup(new Uri("https://login.microsoftonline.com/"), name: "entra-id")
     .AddCheck<DiskSpaceHealthCheck>("disk-space");
 
 // builder.Services.AddHealthChecksUI()
